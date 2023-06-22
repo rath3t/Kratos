@@ -1,7 +1,7 @@
-// KRATOS 
-// _____   __               __  __      _ _   _             
-//|  __ \ / _|             |  \/  |    | | | (_)            
-//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _ 
+// KRATOS
+// _____   __               __  __      _ _   _
+//|  __ \ / _|             |  \/  |    | | | (_)
+//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _
 //|  ___/|  _/ _ \ '_ ` _ \| |\/| |/ _ \ | __| | '_ \ / _` |
 //| |    | ||  __/ | | | | | |  | |  __/ | |_| | | | | (_| |
 //|_|    |_| \___|_| |_| |_|_|  |_|\___|_|\__|_|_| |_|\__, |
@@ -47,29 +47,32 @@
 
 namespace Kratos
 {
-  
- 
+
+
   template<std::size_t TDim> class HeatSource
     {
     public:
       KRATOS_CLASS_POINTER_DEFINITION(HeatSource<TDim>);
-      
-      
+
+
       void Heat_Source(ModelPart & rLagrangianModelPart)
       {
         KRATOS_TRY
-	  
+
         double density=0.0;
         double activation_energy=0.0;
-        double arrhenius_coefficient=0.0;  
-        double heat_of_vaporization=0.0;  
-        double temperature=0.0;  
+        double arrhenius_coefficient=0.0;
+        double heat_of_vaporization=0.0;
+        double temperature=0.0;
         double R=8.31; //universal gas constant
         double aux_var_polymer=0.0;
+        const double delta_time = rLagrangianModelPart.GetProcessInfo()[DELTA_TIME];
+        const double m_carb = 0.947;
+        const double n_carb = 3.692;
 
         for (ModelPart::NodesContainerType::iterator node_it = rLagrangianModelPart.NodesBegin();node_it != rLagrangianModelPart.NodesEnd(); ++node_it)
 	  {
-            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0; 
+            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0;
 
             density= node_it->FastGetSolutionStepValue(DENSITY);
 
@@ -81,22 +84,23 @@ namespace Kratos
 
             temperature= node_it->FastGetSolutionStepValue(TEMPERATURE);
 
-	    double E_over_R_polymer = activation_energy / R;
+	        double E_over_R_polymer = activation_energy / R;
+            double carbonization = node_it->FastGetSolutionStepValue(DECOMPOSITION);
 
- 	    if(temperature >800.0) temperature=800.0;
-
-            aux_var_polymer= arrhenius_coefficient * exp(-E_over_R_polymer/temperature);
-
+            aux_var_polymer = arrhenius_coefficient * exp(-E_over_R_polymer/temperature) \
+                                                    * std::pow(0.01 + carbonization, m_carb) \
+                                                    * std::pow(std::max(1.0 - carbonization, 0.0), n_carb);
 
             node_it->FastGetSolutionStepValue(HEAT_FLUX) = (-1.0) * density * heat_of_vaporization * aux_var_polymer;
-            
+
+            node_it->FastGetSolutionStepValue(DECOMPOSITION) += aux_var_polymer * delta_time;
 
 	  }
-	
+
         KRATOS_CATCH("")
 	  }
-      
-     
+
+
 
 
     };
