@@ -41,6 +41,9 @@ class FemtolaserSolver(BaseClass):
             velocity = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY)
             node.SetSolutionStepValue(KratosMultiphysics.MESH_VELOCITY, velocity)
 
+        self.fluid_solver.main_model_part.Set(KratosMultiphysics.ACTIVE) #not sure whether this is necessary
+        #TODO. This needs to be reviewed.
+        self.HeatSource.Element_Deactivation(self.fluid_solver.main_model_part)
         self.HeatSource.Heat_Source(self.fluid_solver.main_model_part) #heat source for the thermal problem
 
         thermal_is_converged = self.thermal_solver.SolveSolutionStep()

@@ -63,6 +63,7 @@ namespace py = pybind11;
 
  py::class_<HeatSource < 3 > >(m,"HeatSource").def(py::init<>())
    .def("Heat_Source", &HeatSource < 3 > ::Heat_Source)
+   .def("Element_Deactivation", &HeatSource < 3 > ::Element_Deactivation)
    ;
 
  py::class_<PfemMeltingApplyBCProcess, PfemMeltingApplyBCProcess::Pointer, Process>(m, "PfemMeltingApplyBCProcess").def(py::init<ModelPart &>());

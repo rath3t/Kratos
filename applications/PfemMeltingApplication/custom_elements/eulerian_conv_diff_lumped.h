@@ -79,10 +79,17 @@ public:
         return Kratos::make_intrusive<EulerianConvectionDiffusionLumpedElement>(NewId, pGeom, pProperties);
     }
 
+    GeometryData::IntegrationMethod GetIntegrationMethod() const override
+    {
+        return GeometryData::IntegrationMethod::GI_GAUSS_2;
+    }
+
     void Initialize(const ProcessInfo& rCurrentProcessInfo) override
     {
+        mThisIntegrationMethod = this->GetIntegrationMethod();
         const GeometryType& Geom = this->GetGeometry();
-        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
+
+        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
         mIntegrity.resize(NumGPoints);
         std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
     }
@@ -112,7 +119,7 @@ public:
         // Getting the values of shape functions on Integration Points
         BoundedMatrix<double,TNumNodes, TNumNodes> Ncontainer;
         const GeometryType& Geom = this->GetGeometry();
-        Ncontainer = Geom.ShapeFunctionsValues( GeometryData::IntegrationMethod::GI_GAUSS_2 );
+        Ncontainer = Geom.ShapeFunctionsValues( mThisIntegrationMethod );
 
         // Getting the values of Current Process Info and computing the value of h
         this-> GetNodalValues(Variables,rCurrentProcessInfo);
@@ -189,6 +196,46 @@ public:
         KRATOS_CATCH("Error in Eulerian ConvDiff Lumped Element")
     }
 
+    void FinalizeSolutionStep( const ProcessInfo& rCurrentProcessInfo ) override
+    {
+        // Decomposition is first calculated inside the Heat_Source utility
+        // Here we just interpolate the calculated nodal value at each Gauss Point
+        // and we calculate integrity from that value
+
+        const GeometryType& Geom = this->GetGeometry();
+        const SizeType NumNodes = Geom.PointsNumber();
+        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
+        const Matrix& NContainer = Geom.ShapeFunctionsValues( mThisIntegrationMethod );
+
+        for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
+        {
+            double gp_decomposition = 0.0;
+            for ( unsigned int i = 0; i < NumNodes; i++ )
+            {
+                nodal_decomposition = Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
+                gp_decomposition += Ncontainer(igauss,i)*nodal_decomposition;
+            }
+            mIntegrity[igauss] = 1.0 - gp_decomposition;
+        }
+    }
+
+    void CalculateOnIntegrationPoints( const Variable<double>& rVariable,std::vector<double>& rValues,
+                                                const ProcessInfo& rCurrentProcessInfo ) override
+    {
+        if(rVariable == DECOMPOSITION)
+        {
+            const GeometryType& Geom = this->GetGeometry();
+            const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
+
+            if ( rValues.size() != NumGPoints )
+                rValues.resize(NumGPoints);
+
+            for ( unsigned int igauss = 0;  igauss < NumGPoints; igauss++ )
+            {
+                rValues[i] = 1.0 - mIntegrity[igauss];
+            }
+        }
+    }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -209,6 +256,8 @@ public:
 protected:
 
     // Member Variables
+    GeometryData::IntegrationMethod mThisIntegrationMethod;
+
     std::vector<double> mIntegrity;
 
 

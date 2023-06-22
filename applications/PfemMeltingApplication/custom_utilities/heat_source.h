@@ -71,7 +71,7 @@ namespace Kratos
         const double n_carb = 3.692;
 
         for (ModelPart::NodesContainerType::iterator node_it = rLagrangianModelPart.NodesBegin();node_it != rLagrangianModelPart.NodesEnd(); ++node_it)
-	  {
+	      {
             node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0;
 
             density= node_it->FastGetSolutionStepValue(DENSITY);
@@ -95,11 +95,45 @@ namespace Kratos
 
             node_it->FastGetSolutionStepValue(DECOMPOSITION) += aux_var_polymer * delta_time;
 
-	  }
+	      }
 
         KRATOS_CATCH("")
-	  }
+	    }
 
+      void Element_Deactivation(ModelPart & rLagrangianModelPart)
+      {
+        KRATOS_TRY
+
+        const ProcessInfo& CurrentProcessInfo = rLagrangianModelPart.GetProcessInfo();
+
+        int NElems = static_cast<int>(rLagrangianModelPart.Elements().size());
+        ModelPart::ElementsContainerType::iterator el_begin = rLagrangianModelPart.ElementsBegin();
+
+        #pragma omp parallel for
+        for(int i = 0; i < NElems; i++)
+        {
+            ModelPart::ElementsContainerType::iterator itElem = el_begin + i;
+            Element::GeometryType& rGeom = itElem->GetGeometry();
+            GeometryData::IntegrationMethod MyIntegrationMethod = itElem->GetIntegrationMethod();
+            const unsigned int NumGPoints = rGeom.IntegrationPointsNumber( MyIntegrationMethod );
+            std::vector<double> DecompositionVector(NumGPoints);
+            itElem->CalculateOnIntegrationPoints(DECOMPOSITION,DecompositionVector,CurrentProcessInfo);
+
+            // TODO. This needs to be reviewed
+            double average_decomposition = 0.0;
+            for ( unsigned int GPoint = 0; GPoint < NumGPoints; GPoint++ )
+            {
+              average_decomposition += DecompositionVector[GPoint];
+            }
+            average_decomposition = average_decomposition/NumGPoints;
+            
+            if(average_decomposition > 0.75){
+              itElem->Set(ACTIVE, false);
+            }
+        }
+
+        KRATOS_CATCH("")
+	    }
 
 
 
