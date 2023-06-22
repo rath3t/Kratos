@@ -79,15 +79,25 @@ public:
         return Kratos::make_intrusive<EulerianConvectionDiffusionLumpedElement>(NewId, pGeom, pProperties);
     }
 
+    void Initialize(const ProcessInfo& rCurrentProcessInfo) override
+    {
+        const GeometryType& Geom = this->GetGeometry();
+        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
+        mIntegrity.resize(NumGPoints);
+        std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
+    }
+
     void CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo) override {
         KRATOS_TRY
 
         // Resize of the Left and Right Hand side
         if (rLeftHandSideMatrix.size1() != TNumNodes)
             rLeftHandSideMatrix.resize(TNumNodes, TNumNodes, false); //false says not to preserve existing storage!!
+        noalias(rLeftHandSideMatrix) = ZeroMatrix(TNumNodes, TNumNodes);
 
         if (rRightHandSideVector.size() != TNumNodes)
             rRightHandSideVector.resize(TNumNodes, false); //false says not to preserve existing storage!!
+        noalias(rRightHandSideVector) = ZeroVector(TNumNodes);
 
         //Element variables
         typename EulerianConvectionDiffusionElement<TDim, TNumNodes>::ElementVariables Variables;
@@ -123,9 +133,14 @@ public:
         bounded_matrix<double,TNumNodes, TDim> tmp;
 
         // Gauss points and Number of nodes coincides in this case.
+        double integrity_quadrature = 0.0;
+        const double gauss_weight = 0.25;
+
         for(unsigned int igauss=0; igauss<TNumNodes; igauss++)
         {
             noalias(N) = row(Ncontainer,igauss);
+
+            integrity_quadrature += gauss_weight * mIntegrity[igauss];
 
             //obtain the velocity in the middle of the tiem step
             array_1d<double, TDim > vel_gauss=ZeroVector(TDim);
@@ -140,7 +155,7 @@ public:
             const double tau = this->CalculateTau(Variables,norm_vel,h);
 
             //terms multiplying dphi/dt (aux1)
-            noalias(aux1) += (1.0+tau*Variables.beta*Variables.div_v)* 0.25 * IdentityMatrix(4, 4); //outer_prod(N, N); //0.25 * IdentityMatrix(4, 4);
+            noalias(aux1) += (1.0+tau*Variables.beta*Variables.div_v)* gauss_weight * IdentityMatrix(4, 4); //outer_prod(N, N); //0.25 * IdentityMatrix(4, 4);
             noalias(aux1) +=  tau*outer_prod(a_dot_grad, N);
 
             //terms which multiply the gradient of phi
@@ -149,16 +164,18 @@ public:
         }
 
         //adding the second and third term in the formulation
-        noalias(rLeftHandSideMatrix)  = (Variables.dt_inv*Variables.density*Variables.specific_heat + Variables.theta*Variables.beta*Variables.div_v)*aux1;
-        noalias(rRightHandSideVector) = (Variables.dt_inv*Variables.density*Variables.specific_heat - (1.0-Variables.theta)*Variables.beta*Variables.div_v)*prod(aux1,Variables.phi_old);
+        noalias(rLeftHandSideMatrix)  += (Variables.dt_inv*Variables.density*Variables.specific_heat + Variables.theta*Variables.beta*Variables.div_v)*aux1;
+        noalias(rRightHandSideVector) += (Variables.dt_inv*Variables.density*Variables.specific_heat - (1.0-Variables.theta)*Variables.beta*Variables.div_v)*prod(aux1,Variables.phi_old);
 
         //adding the diffusion
-        noalias(rLeftHandSideMatrix)  += (Variables.conductivity * Variables.theta * prod(DN_DX, trans(DN_DX)))*static_cast<double>(TNumNodes);
-        noalias(rRightHandSideVector) -= prod((Variables.conductivity * (1.0-Variables.theta) * prod(DN_DX, trans(DN_DX))),Variables.phi_old)*static_cast<double>(TNumNodes) ;
+        const double effective_conductivity = integrity_quadrature * Variables.conductivity;
+        noalias(rLeftHandSideMatrix)  += (effective_conductivity * Variables.theta * prod(DN_DX, trans(DN_DX)))*static_cast<double>(TNumNodes);
+        noalias(rRightHandSideVector) -= prod((effective_conductivity * (1.0-Variables.theta) * prod(DN_DX, trans(DN_DX))),Variables.phi_old)*static_cast<double>(TNumNodes) ;
 
         //terms in aux2
-        noalias(rLeftHandSideMatrix) += Variables.density*Variables.specific_heat*Variables.theta*aux2;
-        noalias(rRightHandSideVector) -= Variables.density*Variables.specific_heat*(1.0-Variables.theta)*prod(aux2,Variables.phi_old);
+        const double effective_density = integrity_quadrature * Variables.density;
+        noalias(rLeftHandSideMatrix) += effective_density * Variables.specific_heat*Variables.theta*aux2;
+        noalias(rRightHandSideVector) -= effective_density * Variables.specific_heat*(1.0-Variables.theta)*prod(aux2,Variables.phi_old);
 
         // volume source terms (affecting the RHS only)
         noalias(rRightHandSideVector) += prod(aux1, Variables.volumetric_source);
@@ -192,6 +209,8 @@ public:
 protected:
 
     // Member Variables
+    std::vector<double> mIntegrity;
+
 
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
