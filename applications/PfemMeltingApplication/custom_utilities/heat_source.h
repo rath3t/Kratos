@@ -119,7 +119,7 @@ namespace Kratos
             std::vector<double> DecompositionVector(NumGPoints);
             itElem->CalculateOnIntegrationPoints(DECOMPOSITION,DecompositionVector,CurrentProcessInfo);
 
-            // TODO. This needs to be reviewed
+            // TODO. This needs to be reviewed. We could calculate the average decomposition from the nodal values too...
             double average_decomposition = 0.0;
             for ( unsigned int GPoint = 0; GPoint < NumGPoints; GPoint++ )
             {

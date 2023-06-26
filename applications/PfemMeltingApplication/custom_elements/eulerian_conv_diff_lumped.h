@@ -200,7 +200,8 @@ public:
     {
         // Decomposition is first calculated inside the Heat_Source utility
         // Here we just interpolate the calculated nodal value at each Gauss Point
-        // and we calculate integrity from that value
+        // and we calculate integrity from that value. 
+        // TODO. should we calculate Decomposition here?
 
         const GeometryType& Geom = this->GetGeometry();
         const SizeType NumNodes = Geom.PointsNumber();
@@ -212,8 +213,7 @@ public:
             double gp_decomposition = 0.0;
             for ( unsigned int i = 0; i < NumNodes; i++ )
             {
-                nodal_decomposition = Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
-                gp_decomposition += Ncontainer(igauss,i)*nodal_decomposition;
+                gp_decomposition += NContainer(igauss,i)*Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
             }
             mIntegrity[igauss] = 1.0 - gp_decomposition;
         }
@@ -232,7 +232,7 @@ public:
 
             for ( unsigned int igauss = 0;  igauss < NumGPoints; igauss++ )
             {
-                rValues[i] = 1.0 - mIntegrity[igauss];
+                rValues[igauss] = 1.0 - mIntegrity[igauss];
             }
         }
     }
