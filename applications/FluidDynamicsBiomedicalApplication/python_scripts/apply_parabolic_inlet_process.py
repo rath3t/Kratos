@@ -4,6 +4,7 @@ import KratosMultiphysics
 from KratosMultiphysics.read_csv_table_utility import ReadCsvTableUtility
 
 # Import applications
+import KratosMultiphysics.FluidDynamicsApplication as KratosFluid
 import KratosMultiphysics.FluidDynamicsBiomedicalApplication as KratosBio
 
 def Factory(settings, model):
@@ -96,7 +97,7 @@ class ApplyParabolicInletProcess(KratosMultiphysics.Process):
         KratosMultiphysics.NormalCalculationUtils().CalculateOnSimplexNonHistorical(
             inlet_model_part,
             domain_size,
-            KratosBio.INLET_NORMAL)
+            KratosFluid.INLET_NORMAL)
 
         # Create an auxiliary volumetric model part with the elements attached to the inlet
         # On top of accelerating the wall distance calculation, this prevents missbehaviors in presence of complex geometries
