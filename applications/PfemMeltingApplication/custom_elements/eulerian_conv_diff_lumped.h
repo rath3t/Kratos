@@ -56,6 +56,13 @@ public:
     : EulerianConvectionDiffusionElement<TDim, TNumNodes>(NewId, pGeometry, pProperties)
     {}
 
+    /// Copy constructor
+
+    EulerianConvectionDiffusionLumpedElement(const EulerianConvectionDiffusionLumpedElement& rOther)
+    : EulerianConvectionDiffusionElement(rOther),
+    mIntegrity(rOther.mIntegrity)
+    {}
+
     /// Destructor.
     virtual ~EulerianConvectionDiffusionLumpedElement() {};
 
@@ -79,19 +86,23 @@ public:
         return Kratos::make_intrusive<EulerianConvectionDiffusionLumpedElement>(NewId, pGeom, pProperties);
     }
 
-    GeometryData::IntegrationMethod GetIntegrationMethod() const override
-    {
-        return GeometryData::IntegrationMethod::GI_GAUSS_2;
-    }
+    // void Initialize(const ProcessInfo& rCurrentProcessInfo) override
+    // {
+    //     const GeometryType& Geom = this->GetGeometry();
+    //     const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
+    //     mIntegrity.resize(NumGPoints);
+    //     std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
+    // }
 
-    void Initialize(const ProcessInfo& rCurrentProcessInfo) override
+    void InitializeSolutionStep(const ProcessInfo& rCurrentProcessInfo) override
     {
-        mThisIntegrationMethod = this->GetIntegrationMethod();
         const GeometryType& Geom = this->GetGeometry();
-
-        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
-        mIntegrity.resize(NumGPoints);
-        std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
+        unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
+        // TODO. This is necessary if the Initialize method is not used...
+        if (rCurrentProcessInfo[STEP] == 1) {
+            mIntegrity.resize(NumGPoints);
+            std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
+        }
     }
 
     void CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo) override {
@@ -119,7 +130,7 @@ public:
         // Getting the values of shape functions on Integration Points
         BoundedMatrix<double,TNumNodes, TNumNodes> Ncontainer;
         const GeometryType& Geom = this->GetGeometry();
-        Ncontainer = Geom.ShapeFunctionsValues( mThisIntegrationMethod );
+        Ncontainer = Geom.ShapeFunctionsValues( GeometryData::IntegrationMethod::GI_GAUSS_2 );
 
         // Getting the values of Current Process Info and computing the value of h
         this-> GetNodalValues(Variables,rCurrentProcessInfo);
@@ -143,6 +154,10 @@ public:
         double integrity_quadrature = 0.0;
         const double gauss_weight = 0.25;
 
+        KRATOS_WATCH("ABANS LOOP GP")
+        KRATOS_WATCH(mIntegrity.size())
+        KRATOS_WATCH(TNumNodes)
+        // TODO. mIntegrity memory is lost after the 1st time step... (is it because elements are erased and created at every time step?)
         for(unsigned int igauss=0; igauss<TNumNodes; igauss++)
         {
             noalias(N) = row(Ncontainer,igauss);
@@ -169,6 +184,7 @@ public:
             noalias(aux2) += (1.0+tau*Variables.beta*Variables.div_v)*outer_prod(N, a_dot_grad);
             noalias(aux2) += tau*outer_prod(a_dot_grad, a_dot_grad);
         }
+        KRATOS_WATCH("DESPRES LOOP GP")
 
         //adding the second and third term in the formulation
         noalias(rLeftHandSideMatrix)  += (Variables.dt_inv*Variables.density*Variables.specific_heat + Variables.theta*Variables.beta*Variables.div_v)*aux1;
@@ -204,9 +220,9 @@ public:
         // TODO. should we calculate Decomposition here?
 
         const GeometryType& Geom = this->GetGeometry();
+        unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
         const SizeType NumNodes = Geom.PointsNumber();
-        const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
-        const Matrix& NContainer = Geom.ShapeFunctionsValues( mThisIntegrationMethod );
+        const Matrix& NContainer = Geom.ShapeFunctionsValues( GeometryData::IntegrationMethod::GI_GAUSS_2 );
 
         for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
         {
@@ -225,7 +241,7 @@ public:
         if(rVariable == DECOMPOSITION)
         {
             const GeometryType& Geom = this->GetGeometry();
-            const unsigned int NumGPoints = Geom.IntegrationPointsNumber( mThisIntegrationMethod );
+            const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
 
             if ( rValues.size() != NumGPoints )
                 rValues.resize(NumGPoints);
@@ -256,9 +272,8 @@ public:
 protected:
 
     // Member Variables
-    GeometryData::IntegrationMethod mThisIntegrationMethod;
-
     std::vector<double> mIntegrity;
+    // array_1d<double,TNumNodes> msIntegrity(TNumNodes, 1.0);
 
 
 
@@ -273,11 +288,15 @@ private:
     void save(Serializer& rSerializer) const override
     {
         KRATOS_SERIALIZE_SAVE_BASE_CLASS(rSerializer, Element);
+
+        rSerializer.save("mIntegrity",mIntegrity);
     }
 
     void load(Serializer& rSerializer) override
     {
         KRATOS_SERIALIZE_LOAD_BASE_CLASS(rSerializer, Element);
+
+        rSerializer.load("mIntegrity",mIntegrity);
     }
 
 
