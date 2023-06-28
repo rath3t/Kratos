@@ -12,10 +12,7 @@ import KratosMultiphysics.PfemMeltingApplication as PfemM
 
 import time as timer
 
-
 # Importing the base class
-
-
 import KratosMultiphysics.PfemMeltingApplication.coupled_fluid_thermal_solverwithoutmeshgeneration
 BaseClass = KratosMultiphysics.PfemMeltingApplication.coupled_fluid_thermal_solverwithoutmeshgeneration.PfemCoupledFluidThermalSolver
 
@@ -24,7 +21,7 @@ def CreateSolver(main_model_part, custom_settings):
     return FemtolaserSolver(main_model_part, custom_settings)
 
 class FemtolaserSolver(BaseClass):
-   def SolveSolutionStep(self):
+    def SolveSolutionStep(self):
 
         for node in self.fluid_solver.main_model_part.Nodes:
             T = node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE)
@@ -41,7 +38,7 @@ class FemtolaserSolver(BaseClass):
             velocity = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY)
             node.SetSolutionStepValue(KratosMultiphysics.MESH_VELOCITY, velocity)
 
-        self.HeatSource.Heat_Source(self.fluid_solver.main_model_part) #heat source for the thermal problem
+        self.HeatSource.Heat_Source(self.fluid_solver.main_model_part) # Calculate Decomposition
         self.fluid_solver.main_model_part.Set(KratosMultiphysics.ACTIVE) #TODO. I am not sure whether this is necessary
         self.HeatSource.Element_Deactivation(self.fluid_solver.main_model_part) #TODO. This needs to be reviewed. Should we call this after Heat_Source or should we call it before?
 
