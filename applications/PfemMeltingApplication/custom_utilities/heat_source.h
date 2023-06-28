@@ -85,11 +85,11 @@ namespace Kratos
             temperature= node_it->FastGetSolutionStepValue(TEMPERATURE);
 
 	        double E_over_R_polymer = activation_energy / R;
-            double carbonization = node_it->FastGetSolutionStepValue(DECOMPOSITION);
+            double decomposition = node_it->FastGetSolutionStepValue(DECOMPOSITION);
 
             aux_var_polymer = arrhenius_coefficient * exp(-E_over_R_polymer/temperature) \
-                                                    * std::pow(0.01 + carbonization, m_carb) \
-                                                    * std::pow(std::max(1.0 - carbonization, 0.0), n_carb);
+                                                    * std::pow(0.01 + decomposition, m_carb) \
+                                                    * std::pow(std::max(1.0 - decomposition, 0.0), n_carb);
 
             node_it->FastGetSolutionStepValue(HEAT_FLUX) = (-1.0) * density * heat_of_vaporization * aux_var_polymer;
 
@@ -104,6 +104,8 @@ namespace Kratos
       {
         KRATOS_TRY
 
+        const double decomposition_threshold = 0.1;
+
         const ProcessInfo& CurrentProcessInfo = rLagrangianModelPart.GetProcessInfo();
 
         int NElems = static_cast<int>(rLagrangianModelPart.Elements().size());
@@ -114,22 +116,56 @@ namespace Kratos
         {
             ModelPart::ElementsContainerType::iterator itElem = el_begin + i;
             Element::GeometryType& rGeom = itElem->GetGeometry();
-            GeometryData::IntegrationMethod MyIntegrationMethod = itElem->GetIntegrationMethod();
-            const unsigned int NumGPoints = rGeom.IntegrationPointsNumber( MyIntegrationMethod );
-            std::vector<double> DecompositionVector(NumGPoints);
-            itElem->CalculateOnIntegrationPoints(DECOMPOSITION,DecompositionVector,CurrentProcessInfo);
+            // GeometryData::IntegrationMethod MyIntegrationMethod = itElem->GetIntegrationMethod();
+            // const unsigned int NumGPoints = rGeom.IntegrationPointsNumber( MyIntegrationMethod );
+            // std::vector<double> DecompositionVector(NumGPoints);
+            // itElem->CalculateOnIntegrationPoints(DECOMPOSITION,DecompositionVector,CurrentProcessInfo);
+            // // TODO. This needs to be reviewed. We could calculate the average decomposition from the nodal values too...
+            // double average_decomposition = 0.0;
+            // for ( unsigned int GPoint = 0; GPoint < NumGPoints; GPoint++ )
+            // {
+            //   average_decomposition += DecompositionVector[GPoint];
+            // }
+            // average_decomposition = average_decomposition/NumGPoints;
+            // if(average_decomposition > 0.75){
+            //   itElem->Set(ACTIVE, false);
+            // }
 
-            // TODO. This needs to be reviewed. We could calculate the average decomposition from the nodal values too...
+            const unsigned int NumNodes = rGeom.PointsNumber();
             double average_decomposition = 0.0;
-            for ( unsigned int GPoint = 0; GPoint < NumGPoints; GPoint++ )
+            for ( unsigned int node = 0; node < NumNodes; node++ )
             {
-              average_decomposition += DecompositionVector[GPoint];
+              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
             }
-            average_decomposition = average_decomposition/NumGPoints;
+            average_decomposition = average_decomposition/NumNodes;
             
-            if(average_decomposition > 0.75){
+            if(average_decomposition > decomposition_threshold){
               itElem->Set(ACTIVE, false);
             }
+
+        }
+
+        int NCons = static_cast<int>(rLagrangianModelPart.Conditions().size());
+        ModelPart::ConditionsContainerType::iterator cond_begin = rLagrangianModelPart.ConditionsBegin();
+
+        #pragma omp parallel for
+        for(int i = 0; i < NCons; i++)
+        {
+            ModelPart::ConditionsContainerType::iterator itCond = cond_begin + i;
+            Condition::GeometryType& rGeom = itCond->GetGeometry();
+
+            const unsigned int NumNodes = rGeom.PointsNumber();
+            double average_decomposition = 0.0;
+            for ( unsigned int node = 0; node < NumNodes; node++ )
+            {
+              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
+            }
+            average_decomposition = average_decomposition/NumNodes;
+            
+            if(average_decomposition > decomposition_threshold){
+              itCond->Set(ACTIVE, false);
+            }
+
         }
 
         KRATOS_CATCH("")
