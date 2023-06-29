@@ -56,12 +56,6 @@ public:
     : EulerianConvectionDiffusionElement<TDim, TNumNodes>(NewId, pGeometry, pProperties)
     {}
 
-    /// Copy constructor
-    // EulerianConvectionDiffusionLumpedElement(const EulerianConvectionDiffusionLumpedElement& rOther)
-    // : EulerianConvectionDiffusionElement(rOther),
-    // mIntegrity(rOther.mIntegrity)
-    // {}
-
     /// Destructor.
     virtual ~EulerianConvectionDiffusionLumpedElement() {};
 
@@ -84,14 +78,6 @@ public:
     {
         return Kratos::make_intrusive<EulerianConvectionDiffusionLumpedElement>(NewId, pGeom, pProperties);
     }
-
-    // void Initialize(const ProcessInfo& rCurrentProcessInfo) override
-    // {
-    //     const GeometryType& Geom = this->GetGeometry();
-    //     const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-    //     mIntegrity.resize(NumGPoints, false);
-    //     std::fill(mIntegrity.begin(), mIntegrity.end(), 1.0);
-    // }
 
     void CalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo) override {
         KRATOS_TRY
@@ -208,28 +194,6 @@ public:
         KRATOS_CATCH("Error in Eulerian ConvDiff Lumped Element")
     }
 
-    // void FinalizeSolutionStep( const ProcessInfo& rCurrentProcessInfo ) override
-    // {
-    //     // Decomposition is first calculated inside the Heat_Source utility
-    //     // Here we just interpolate the calculated nodal value at each Gauss Point
-    //     // and we calculate integrity from that value. 
-    //     // TODO. should we calculate Decomposition here?
-
-    //     const GeometryType& Geom = this->GetGeometry();
-    //     unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-    //     const Matrix& NContainer = Geom.ShapeFunctionsValues( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-
-    //     for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
-    //     {
-    //         double gp_decomposition = 0.0;
-    //         for ( unsigned int i = 0; i < TNumNodes; i++ )
-    //         {
-    //             gp_decomposition += NContainer(igauss,i)*Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
-    //         }
-    //         mIntegrity[igauss] = 1.0 - gp_decomposition;
-    //     }
-    // }
-
     void CalculateOnIntegrationPoints( const Variable<double>& rVariable,std::vector<double>& rValues,
                                                 const ProcessInfo& rCurrentProcessInfo ) override
     {
@@ -273,7 +237,6 @@ public:
 protected:
 
     // Member Variables
-    // std::vector<double> mIntegrity;
 
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -288,14 +251,12 @@ private:
     {
         KRATOS_SERIALIZE_SAVE_BASE_CLASS(rSerializer, Element);
 
-        // rSerializer.save("mIntegrity",mIntegrity);
     }
 
     void load(Serializer& rSerializer) override
     {
         KRATOS_SERIALIZE_LOAD_BASE_CLASS(rSerializer, Element);
 
-        // rSerializer.load("mIntegrity",mIntegrity);
     }
 
 
