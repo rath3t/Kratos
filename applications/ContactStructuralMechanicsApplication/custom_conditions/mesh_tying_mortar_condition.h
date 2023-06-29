@@ -98,7 +98,7 @@ public:
     typedef Point                                                                        PointType;
 
     /// Node type definition
-    typedef Node<3>                                                                       NodeType;
+    typedef Node                                                                       NodeType;
 
     /// Geoemtry type definition
     typedef Geometry<NodeType>                                                        GeometryType;
@@ -130,6 +130,9 @@ public:
     typedef MortarOperator<NumNodes, NumNodesMaster>                        MortarConditionMatrices;
 
     typedef ExactMortarIntegrationUtility<TDim, NumNodes, false, NumNodesMaster> IntegrationUtility;
+
+    // The threshold coefficient considered for checking
+    static constexpr double CheckThresholdCoefficient = 1.0e-12;
 
     ///@}
     ///@name  Enum's
