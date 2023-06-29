@@ -21,6 +21,18 @@ def CreateSolver(main_model_part, custom_settings):
     return FemtolaserSolver(main_model_part, custom_settings)
 
 class FemtolaserSolver(BaseClass):
+    def _SetLaser(self, laser):
+        self.laser = laser
+        self.fluid_solver._SetLaser(laser)
+        # self.thermal_solver._SetLaser(laser)
+        self.laser_is_set = True
+
+    def Initialize(self):
+        if not self.laser_is_set:
+            raise('Laser must be set before Initialize()')
+
+        super(FemtolaserSolver, self).Initialize()
+
     def SolveSolutionStep(self):
 
         for node in self.fluid_solver.main_model_part.Nodes:

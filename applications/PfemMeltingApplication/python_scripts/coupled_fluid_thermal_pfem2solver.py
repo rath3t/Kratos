@@ -77,8 +77,8 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
 
         #from KratosMultiphysics.FluidDynamicsApplication import python_solvers_wrapper_fluid
         #self.fluid_solver = python_solvers_wrapper_fluid.CreateSolverByParameters(self.model, self.settings["fluid_solver_settings"],"OpenMP")
-        import KratosMultiphysics.PfemMeltingApplication.fluid_solver_customized
-        self.fluid_solver = KratosMultiphysics.PfemMeltingApplication.fluid_solver_customized.FluidSolverCustomized(model, self.settings["fluid_solver_settings"])
+        import KratosMultiphysics.PfemMeltingApplication.femtolaser_fluid_solver as femtolaser_fluid_solver
+        self.fluid_solver = femtolaser_fluid_solver.FemtolaserNavierStokesSolverMonolithic(model, self.settings["fluid_solver_settings"])
 
         from KratosMultiphysics.ConvectionDiffusionApplication import python_solvers_wrapper_convection_diffusion
 

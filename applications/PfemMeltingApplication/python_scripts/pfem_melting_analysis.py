@@ -10,6 +10,8 @@ from KratosMultiphysics.analysis_stage import AnalysisStage
 # Other imports
 import sys
 
+from KratosMultiphysics.PfemMeltingApplication import apply_laser_process
+
 class PfemMeltingAnalysis(AnalysisStage):
     """
     This class is the main-script of the ConvectionDiffusionApplication put in a class
@@ -19,6 +21,8 @@ class PfemMeltingAnalysis(AnalysisStage):
     def __init__(self, model, project_parameters):
         # Making sure that older cases still work by properly initalizing the parameters
         solver_settings = project_parameters["solver_settings"]
+
+        self.laser = apply_laser_process.Laser("LaserSettings.json")
          
         if not solver_settings.Has("domain_size"):
             KratosMultiphysics.Logger.PrintInfo("PfemMeltingAnalysis", "Using the old way to pass the domain_size, this will be removed!")
@@ -26,6 +30,8 @@ class PfemMeltingAnalysis(AnalysisStage):
             solver_settings["domain_size"].SetInt(project_parameters["problem_data"]["domain_size"].GetInt())
         
         super(PfemMeltingAnalysis, self).__init__(model, project_parameters)
+
+        self._solver._SetLaser(self.laser)
 
     #### Internal functions ####
     def _CreateSolver(self):
