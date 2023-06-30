@@ -125,29 +125,46 @@ public:
         bounded_matrix<double,TNumNodes, TDim> tmp;
 
         unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-        std::vector<double> Integrity(NumGPoints);
-        // array_1d<double,TNumNodes> Integrity; // Here TNumNodes = NumGPoints
+        array_1d<double,TNumNodes> Integrity = ZeroVector(TNumNodes); // Here TNumNodes = NumGPoints
         for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
         {
-            double gp_decomposition = 0.0;
             for ( unsigned int i = 0; i < TNumNodes; i++ )
             {
-                gp_decomposition += Ncontainer(igauss,i)*Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
+                Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - Geom[i].FastGetSolutionStepValue(DECOMPOSITION));
             }
-            Integrity[igauss] = 1.0 - gp_decomposition;
         }
+        // TODO. Testing
+        // if(rCurrentProcessInfo[STEP] == 1){
+        //     noalias(Integrity) = ZeroVector(TNumNodes);
+        //     for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
+        //     {
+        //         for ( unsigned int i = 0; i < TNumNodes; i++ )
+        //         {
+        //             Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - 0.0);
+        //         }
+        //     }
+        // }
+        // if(rCurrentProcessInfo[STEP] == 2){
+        //     noalias(Integrity) = ZeroVector(TNumNodes);
+        //     for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
+        //     {
+        //         for ( unsigned int i = 0; i < TNumNodes; i++ )
+        //         {
+        //             Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - 0.5);
+        //         }
+        //     }
+        // }
 
         // Gauss points and Number of nodes coincides in this case.
         double integrity_quadrature = 0.0;
-        const double gauss_weight = 0.25;
 
         for(unsigned int igauss=0; igauss<TNumNodes; igauss++)
         {
             noalias(N) = row(Ncontainer,igauss);
 
-            integrity_quadrature += gauss_weight * Integrity[igauss];
+            integrity_quadrature += Integrity[igauss];
 
-            //obtain the velocity in the middle of the tiem step
+            //obtain the velocity in the middle of the time step
             array_1d<double, TDim > vel_gauss=ZeroVector(TDim);
             for (unsigned int i = 0; i < TNumNodes; i++)
             {
@@ -160,12 +177,14 @@ public:
             const double tau = this->CalculateTau(Variables,norm_vel,h);
 
             //terms multiplying dphi/dt (aux1)
-            noalias(aux1) += (1.0+tau*Variables.beta*Variables.div_v)* gauss_weight * IdentityMatrix(4, 4); //outer_prod(N, N); //0.25 * IdentityMatrix(4, 4);
+            noalias(aux1) += (1.0*Integrity[igauss]+tau*Variables.beta*Variables.div_v)* 0.25 * IdentityMatrix(4, 4); //outer_prod(N, N); //0.25 * IdentityMatrix(4, 4);
             noalias(aux1) +=  tau*outer_prod(a_dot_grad, N);
+            // aux1 *= Integrity[igauss];
 
             //terms which multiply the gradient of phi
-            noalias(aux2) += (1.0+tau*Variables.beta*Variables.div_v)*outer_prod(N, a_dot_grad);
+            noalias(aux2) += (1.0*Integrity[igauss]+tau*Variables.beta*Variables.div_v)*outer_prod(N, a_dot_grad);
             noalias(aux2) += tau*outer_prod(a_dot_grad, a_dot_grad);
+            // aux2 *= Integrity[igauss];
         }
 
         //adding the second and third term in the formulation
@@ -178,9 +197,8 @@ public:
         noalias(rRightHandSideVector) -= prod((effective_conductivity * (1.0-Variables.theta) * prod(DN_DX, trans(DN_DX))),Variables.phi_old)*static_cast<double>(TNumNodes) ;
 
         //terms in aux2
-        const double effective_density = integrity_quadrature * Variables.density;
-        noalias(rLeftHandSideMatrix) += effective_density * Variables.specific_heat*Variables.theta*aux2;
-        noalias(rRightHandSideVector) -= effective_density * Variables.specific_heat*(1.0-Variables.theta)*prod(aux2,Variables.phi_old);
+        noalias(rLeftHandSideMatrix) += Variables.density * Variables.specific_heat*Variables.theta*aux2;
+        noalias(rRightHandSideVector) -= Variables.density * Variables.specific_heat*(1.0-Variables.theta)*prod(aux2,Variables.phi_old);
 
         // volume source terms (affecting the RHS only)
         noalias(rRightHandSideVector) += prod(aux1, Variables.volumetric_source);
@@ -190,6 +208,20 @@ public:
 
         rRightHandSideVector *= Volume/static_cast<double>(TNumNodes);
         rLeftHandSideMatrix *= Volume/static_cast<double>(TNumNodes);
+
+        // TODO. Testing
+        // if((rCurrentProcessInfo[STEP] == 1) && (this->Id()==1846)){
+        //     KRATOS_WATCH(this->Id())
+        //     KRATOS_WATCH(integrity_quadrature/4.0)
+        //     KRATOS_WATCH(rRightHandSideVector)
+        //     KRATOS_WATCH(rLeftHandSideMatrix)
+        // }
+        // if((rCurrentProcessInfo[STEP] == 2) && (this->Id()==1846)){
+        //     KRATOS_WATCH(this->Id())
+        //     KRATOS_WATCH(integrity_quadrature/4.0)
+        //     KRATOS_WATCH(rRightHandSideVector)
+        //     KRATOS_WATCH(rLeftHandSideMatrix)
+        // }
 
         KRATOS_CATCH("Error in Eulerian ConvDiff Lumped Element")
     }
