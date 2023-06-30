@@ -94,6 +94,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         #self.Pfem2Utils = PFEM2.Pfem2Utils()
         self.faceheatflux = PfemM.FaceHeatFlux()
         self.HeatSource = PfemM.HeatSource()
+        self.DecompositionUtility = PfemM.DecompositionUtility()
         self.outstring3 = "volume" + self.GetSuffix()
         self.outputfile4 = open(self.outstring3, 'w')
         self.outstring5 = "computational_times" + self.GetSuffix()
@@ -237,6 +238,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.ARRHENIUS_VALUE)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.CARBONIZATION)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION)
+        self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION_THRESHOLD)
 
         self.thermal_solver.AddVariables()
 
@@ -274,11 +276,12 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         self.ReMesh()
 
     def assign_nodally_properties(self):
-        #here we assign ACTIVATION_ENERGY, ARRHENIUS_COEFFICIENT and HEAT_OF_VAPORIZATION taken from FluidMaterial.json
-        KratosMultiphysics.VariableUtils().SetVariable(self.variables_aux[0], self.values_aux[0].GetDouble(), self.fluid_solver.main_model_part.Nodes)
-        KratosMultiphysics.VariableUtils().SetVariable(self.variables_aux[1], self.values_aux[1].GetDouble(), self.fluid_solver.main_model_part.Nodes)
-        KratosMultiphysics.VariableUtils().SetVariable(self.variables_aux[2], self.values_aux[2].GetDouble(), self.fluid_solver.main_model_part.Nodes)
-
+        i = 0
+        for variable in self.variables_aux:
+            if self.fluid_solver.main_model_part.HasNodalSolutionStepVariable(variable):
+                KratosMultiphysics.VariableUtils().SetVariable(variable, self.values_aux[i].GetDouble(), self.fluid_solver.main_model_part.Nodes)
+            i += 1
+        
         for node in self.fluid_solver.main_model_part.Nodes:
             node.SetSolutionStepValue(KratosMultiphysics.BODY_FORCE_X,0,self.gravity[0].GetDouble())
             node.SetSolutionStepValue(KratosMultiphysics.BODY_FORCE_Y,0,self.gravity[1].GetDouble())

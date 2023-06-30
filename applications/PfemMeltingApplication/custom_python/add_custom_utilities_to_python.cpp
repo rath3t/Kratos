@@ -31,6 +31,7 @@
 #include "custom_utilities/face_heat_distribution.h"
 #include "custom_utilities/streamline.h"
 #include "custom_utilities/heat_source.h"
+#include "custom_utilities/decomposition_utility.h"
 #include "custom_utilities/pfemmelting_apply_bc_process.h"
 
 namespace Kratos
@@ -63,7 +64,11 @@ namespace py = pybind11;
 
  py::class_<HeatSource < 3 > >(m,"HeatSource").def(py::init<>())
    .def("Heat_Source", &HeatSource < 3 > ::Heat_Source)
-   .def("Element_Deactivation", &HeatSource < 3 > ::Element_Deactivation)
+   ;
+
+ py::class_<DecompositionUtility < 3 > >(m,"DecompositionUtility").def(py::init<>())
+   .def("CalculateDecomposition", &DecompositionUtility < 3 > ::CalculateDecomposition)
+   .def("ElementDeactivation", &DecompositionUtility < 3 > ::ElementDeactivation)
    ;
 
  py::class_<PfemMeltingApplyBCProcess, PfemMeltingApplyBCProcess::Pointer, Process>(m, "PfemMeltingApplyBCProcess").def(py::init<ModelPart &>());

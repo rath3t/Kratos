@@ -1,7 +1,7 @@
-// KRATOS
-// _____   __               __  __      _ _   _
-//|  __ \ / _|             |  \/  |    | | | (_)
-//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _
+// KRATOS 
+// _____   __               __  __      _ _   _             
+//|  __ \ / _|             |  \/  |    | | | (_)            
+//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _ 
 //|  ___/|  _/ _ \ '_ ` _ \| |\/| |/ _ \ | __| | '_ \ / _` |
 //| |    | ||  __/ | | | | | |  | |  __/ | |_| | | | | (_| |
 //|_|    |_| \___|_| |_| |_|_|  |_|\___|_|\__|_|_| |_|\__, |
@@ -47,32 +47,29 @@
 
 namespace Kratos
 {
-
-
+  
+ 
   template<std::size_t TDim> class HeatSource
     {
     public:
       KRATOS_CLASS_POINTER_DEFINITION(HeatSource<TDim>);
-
-
+      
+      
       void Heat_Source(ModelPart & rLagrangianModelPart)
       {
         KRATOS_TRY
-
+	  
         double density=0.0;
         double activation_energy=0.0;
-        double arrhenius_coefficient=0.0;
-        double heat_of_vaporization=0.0;
-        double temperature=0.0;
+        double arrhenius_coefficient=0.0;  
+        double heat_of_vaporization=0.0;  
+        double temperature=0.0;  
         double R=8.31; //universal gas constant
         double aux_var_polymer=0.0;
-        const double delta_time = rLagrangianModelPart.GetProcessInfo()[DELTA_TIME];
-        const double m_carb = 0.947;
-        const double n_carb = 3.692;
 
         for (ModelPart::NodesContainerType::iterator node_it = rLagrangianModelPart.NodesBegin();node_it != rLagrangianModelPart.NodesEnd(); ++node_it)
-	      {
-            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0;
+	  {
+            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0; 
 
             density= node_it->FastGetSolutionStepValue(DENSITY);
 
@@ -84,93 +81,22 @@ namespace Kratos
 
             temperature= node_it->FastGetSolutionStepValue(TEMPERATURE);
 
-	        double E_over_R_polymer = activation_energy / R;
-            double decomposition = node_it->FastGetSolutionStepValue(DECOMPOSITION);
+	    double E_over_R_polymer = activation_energy / R;
 
-            aux_var_polymer = arrhenius_coefficient * exp(-E_over_R_polymer/temperature) \
-                                                    * std::pow(0.01 + decomposition, m_carb) \
-                                                    * std::pow(std::max(1.0 - decomposition, 0.0), n_carb);
+ 	    if(temperature >800.0) temperature=800.0;
+
+            aux_var_polymer= arrhenius_coefficient * exp(-E_over_R_polymer/temperature);
+
 
             node_it->FastGetSolutionStepValue(HEAT_FLUX) = (-1.0) * density * heat_of_vaporization * aux_var_polymer;
-
-            node_it->FastGetSolutionStepValue(DECOMPOSITION) += aux_var_polymer * delta_time;
-
-	      }
-
-        KRATOS_CATCH("")
-	    }
-
-      void Element_Deactivation(ModelPart & rLagrangianModelPart)
-      {
-        KRATOS_TRY
-
-        const double decomposition_threshold = 0.1;
-
-        const ProcessInfo& CurrentProcessInfo = rLagrangianModelPart.GetProcessInfo();
-
-        int NElems = static_cast<int>(rLagrangianModelPart.Elements().size());
-        ModelPart::ElementsContainerType::iterator el_begin = rLagrangianModelPart.ElementsBegin();
-
-        #pragma omp parallel for
-        for(int i = 0; i < NElems; i++)
-        {
-            ModelPart::ElementsContainerType::iterator itElem = el_begin + i;
-            Element::GeometryType& rGeom = itElem->GetGeometry();
-            // GeometryData::IntegrationMethod MyIntegrationMethod = itElem->GetIntegrationMethod();
-            // const unsigned int NumGPoints = rGeom.IntegrationPointsNumber( MyIntegrationMethod );
-            // std::vector<double> DecompositionVector(NumGPoints);
-            // itElem->CalculateOnIntegrationPoints(DECOMPOSITION,DecompositionVector,CurrentProcessInfo);
-            // // TODO. This needs to be reviewed. We could calculate the average decomposition from the nodal values too...
-            // double average_decomposition = 0.0;
-            // for ( unsigned int GPoint = 0; GPoint < NumGPoints; GPoint++ )
-            // {
-            //   average_decomposition += DecompositionVector[GPoint];
-            // }
-            // average_decomposition = average_decomposition/NumGPoints;
-            // if(average_decomposition > 0.75){
-            //   itElem->Set(ACTIVE, false);
-            // }
-
-            const unsigned int NumNodes = rGeom.PointsNumber();
-            double average_decomposition = 0.0;
-            for ( unsigned int node = 0; node < NumNodes; node++ )
-            {
-              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
-            }
-            average_decomposition = average_decomposition/NumNodes;
             
-            if(average_decomposition > decomposition_threshold){
-              itElem->Set(ACTIVE, false);
-            }
 
-        }
-
-        int NCons = static_cast<int>(rLagrangianModelPart.Conditions().size());
-        ModelPart::ConditionsContainerType::iterator cond_begin = rLagrangianModelPart.ConditionsBegin();
-
-        #pragma omp parallel for
-        for(int i = 0; i < NCons; i++)
-        {
-            ModelPart::ConditionsContainerType::iterator itCond = cond_begin + i;
-            Condition::GeometryType& rGeom = itCond->GetGeometry();
-
-            const unsigned int NumNodes = rGeom.PointsNumber();
-            double average_decomposition = 0.0;
-            for ( unsigned int node = 0; node < NumNodes; node++ )
-            {
-              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
-            }
-            average_decomposition = average_decomposition/NumNodes;
-            
-            if(average_decomposition > decomposition_threshold){
-              itCond->Set(ACTIVE, false);
-            }
-
-        }
-
+	  }
+	
         KRATOS_CATCH("")
-	    }
-
+	  }
+      
+     
 
 
     };

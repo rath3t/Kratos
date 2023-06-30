@@ -50,9 +50,8 @@ class FemtolaserSolver(BaseClass):
             velocity = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY)
             node.SetSolutionStepValue(KratosMultiphysics.MESH_VELOCITY, velocity)
 
-        self.HeatSource.Heat_Source(self.fluid_solver.main_model_part) # Calculate Decomposition
-        self.fluid_solver.main_model_part.Set(KratosMultiphysics.ACTIVE) #TODO. I am not sure whether this is necessary
-        self.HeatSource.Element_Deactivation(self.fluid_solver.main_model_part) #TODO. This needs to be reviewed. Should we call this after Heat_Source or should we call it before?
+        self.DecompositionUtility.CalculateDecomposition(self.fluid_solver.main_model_part)
+        self.DecompositionUtility.ElementDeactivation(self.fluid_solver.main_model_part)
 
         thermal_is_converged = self.thermal_solver.SolveSolutionStep()
         # self.CalculateViscosityaux()

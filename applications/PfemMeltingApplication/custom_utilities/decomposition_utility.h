@@ -1,0 +1,168 @@
+// KRATOS
+// _____   __               __  __      _ _   _
+//|  __ \ / _|             |  \/  |    | | | (_)
+//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _
+//|  ___/|  _/ _ \ '_ ` _ \| |\/| |/ _ \ | __| | '_ \ / _` |
+//| |    | ||  __/ | | | | | |  | |  __/ | |_| | | | | (_| |
+//|_|    |_| \___|_| |_| |_|_|  |_|\___|_|\__|_|_| |_|\__, |
+//                                                     __/ |
+//                                                    |___/ APPLICATION
+//  License: BSD License
+//					 Kratos default license: kratos/license.txt
+//
+//  Main authors:    Guillermo Casas
+//                   Ignasi de Pouplana
+//
+
+
+#if !defined(KRATOS_DECOMPOSITION_UTILITY_INCLUDED )
+#define  KRATOS_DECOMPOSITION_UTILITY_INCLUDED
+
+// System includes
+#include <string>
+#include <iostream>
+#include <algorithm>
+
+// External includes
+
+
+// Project includes
+#include "includes/define.h"
+#include "includes/model_part.h"
+#include "includes/node.h"
+#include "utilities/geometry_utilities.h"
+#include "geometries/tetrahedra_3d_4.h"
+#include "pfem_melting_application.h"
+#include "spatial_containers/spatial_containers.h"
+#include "utilities/timer.h"
+#include "processes/node_erase_process.h"
+#include "utilities/binbased_fast_point_locator.h"
+#include "includes/deprecated_variables.h"
+
+#include <boost/timer.hpp>
+#include "utilities/timer.h"
+
+#ifdef _OPENMP
+#include "omp.h"
+#endif
+
+namespace Kratos
+{
+
+
+  template<std::size_t TDim> class DecompositionUtility
+    {
+    public:
+      KRATOS_CLASS_POINTER_DEFINITION(DecompositionUtility<TDim>);
+
+
+      void CalculateDecomposition(ModelPart & rLagrangianModelPart)
+      {
+        KRATOS_TRY
+
+        double density=0.0;
+        double activation_energy=0.0;
+        double arrhenius_coefficient=0.0;
+        double heat_of_vaporization=0.0;
+        double temperature=0.0;
+        double R=8.31; //universal gas constant
+        double aux_var_polymer=0.0;
+        const double delta_time = rLagrangianModelPart.GetProcessInfo()[DELTA_TIME];
+        const double m_carb = 0.947;
+        const double n_carb = 3.692;
+
+        for (ModelPart::NodesContainerType::iterator node_it = rLagrangianModelPart.NodesBegin();node_it != rLagrangianModelPart.NodesEnd(); ++node_it)
+	      {
+            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0;
+
+            density= node_it->FastGetSolutionStepValue(DENSITY);
+
+            activation_energy= node_it->FastGetSolutionStepValue(ACTIVATION_ENERGY);
+
+            arrhenius_coefficient= node_it->FastGetSolutionStepValue(ARRHENIUS_COEFFICIENT);
+
+            heat_of_vaporization= node_it->FastGetSolutionStepValue(HEAT_OF_VAPORIZATION);
+
+            temperature= node_it->FastGetSolutionStepValue(TEMPERATURE);
+
+	        double E_over_R_polymer = activation_energy / R;
+            double decomposition = node_it->FastGetSolutionStepValue(DECOMPOSITION);
+
+            aux_var_polymer = arrhenius_coefficient * exp(-E_over_R_polymer/temperature) \
+                                                    * std::pow(0.01 + decomposition, m_carb) \
+                                                    * std::pow(std::max(1.0 - decomposition, 0.0), n_carb);
+
+            node_it->FastGetSolutionStepValue(HEAT_FLUX) = (-1.0) * density * heat_of_vaporization * aux_var_polymer;
+
+            node_it->FastGetSolutionStepValue(DECOMPOSITION) += aux_var_polymer * delta_time;
+
+	      }
+
+        KRATOS_CATCH("")
+	    }
+
+      void ElementDeactivation(ModelPart & rLagrangianModelPart)
+      {
+        KRATOS_TRY
+
+        // const ProcessInfo& CurrentProcessInfo = rLagrangianModelPart.GetProcessInfo();
+
+        int NElems = static_cast<int>(rLagrangianModelPart.Elements().size());
+        ModelPart::ElementsContainerType::iterator el_begin = rLagrangianModelPart.ElementsBegin();
+        #pragma omp parallel for
+        for(int i = 0; i < NElems; i++)
+        {
+            ModelPart::ElementsContainerType::iterator itElem = el_begin + i;
+            Element::GeometryType& rGeom = itElem->GetGeometry();
+            const unsigned int NumNodes = rGeom.PointsNumber();
+            double average_decomposition = 0.0;
+            double average_decomposition_threshold = 0.0;
+            for ( unsigned int node = 0; node < NumNodes; node++ )
+            {
+              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
+              average_decomposition_threshold += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION_THRESHOLD);
+            }
+            average_decomposition = average_decomposition/NumNodes;
+            average_decomposition_threshold = average_decomposition_threshold/NumNodes;
+            
+            if(average_decomposition > average_decomposition_threshold){
+              itElem->Set(ACTIVE, false);
+            }
+        }
+
+        int NCons = static_cast<int>(rLagrangianModelPart.Conditions().size());
+        ModelPart::ConditionsContainerType::iterator cond_begin = rLagrangianModelPart.ConditionsBegin();
+        #pragma omp parallel for
+        for(int i = 0; i < NCons; i++)
+        {
+            ModelPart::ConditionsContainerType::iterator itCond = cond_begin + i;
+            Condition::GeometryType& rGeom = itCond->GetGeometry();
+
+            const unsigned int NumNodes = rGeom.PointsNumber();
+            double average_decomposition = 0.0;
+            double average_decomposition_threshold = 0.0;
+            for ( unsigned int node = 0; node < NumNodes; node++ )
+            {
+              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
+              average_decomposition_threshold += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION_THRESHOLD);
+            }
+            average_decomposition = average_decomposition/NumNodes;
+            average_decomposition_threshold = average_decomposition_threshold/NumNodes;
+            
+            if(average_decomposition > average_decomposition_threshold){
+              itCond->Set(ACTIVE, false);
+            }
+        }
+
+        KRATOS_CATCH("")
+	    }
+
+
+
+    };
+
+} // namespace Kratos.
+
+#endif // KRATOS_DECOMPOSITION_UTILITY_INCLUDED  defined
+
+
