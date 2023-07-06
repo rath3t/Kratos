@@ -1,0 +1,134 @@
+{
+    "problem_data"     : {
+        "problem_name"         : "element_tests/constant_laser_on_box/constant_laser_on_box",
+        "parallel_type"        : "OpenMP",
+        "echo_level"           : 0,
+        "start_time"           : 0.0,
+        "end_time"             : 0.1,
+        "domain_size"          : 3
+    },
+    "output_processes" : {
+        "gid_output" : [],
+        "vtk_output" : []
+    },
+    "restart_options"  : {
+        "SaveRestart"      : false,
+        "RestartFrequency" : 0,
+        "LoadRestart"      : false,
+        "Restart_Step"     : 0
+    },
+    "solver_settings"  : {
+        "solver_type"             : "FemtolaserDrilling",
+        "domain_size"             : 3,
+        "echo_level"              : 0,
+        "material_import_settings"    : {
+            "materials_filename" : "element_tests/constant_laser_on_box/materials.json"
+        },
+        "laser_import_settings": {
+            "laser_filename"      : "element_tests/constant_laser_on_box/LaserSettings.json"
+        },
+        "environment_settings" : {
+            "gravity"             : [0.0,0.0,-9.81],
+            "ambient_temperature" : 293.15
+        },
+        "mesh_element_size"    : 0.00354858,
+        "fluid_solver_settings"   : {
+            "model_part_name"             : "ModelPart",
+            "domain_size"                 : 3,
+            "solver_type"                 : "Monolithic",
+            "model_import_settings"       : {
+                "input_type"     : "mdpa",
+                "input_filename" : "element_tests/constant_laser_on_box/constant_laser_on_box"
+            },
+            "echo_level"                  : 0,
+            "compute_reactions"           : false,
+            "relative_velocity_tolerance" : 0.001,
+            "absolute_velocity_tolerance" : 1e-5,
+            "relative_pressure_tolerance" : 0.001,
+            "absolute_pressure_tolerance" : 1e-5,
+            "skin_parts"                  : [],
+            "volume_model_part_name"      : "ModelPart",
+            "time_stepping"               : {
+                "time_step"           : 0.01,
+                "automatic_time_step" : false,
+                "time_step_reduction_coefficient": 1.0
+            },
+            "formulation"                 : {
+                "element_type"             : "vms",
+                "use_orthogonal_subscales" : false,
+                "dynamic_tau"              : 1.0
+            }
+        },
+        "thermal_solver_settings" : {
+            "model_part_name"                    : "thermal_ModelPart",
+            "domain_size"                        : 3,
+            "solver_type"                        : "transient",
+            "analysis_type"                      : "non_linear",
+            "model_import_settings"              : {
+                "input_type"     : "mdpa",
+                "input_filename" : "element_tests/constant_laser_on_box/constant_laser_on_box"
+            },
+            "material_import_settings"           : {
+                "materials_filename" : "element_tests/constant_laser_on_box/materials.json"
+            },
+            "time_integration_method"            : "implicit",
+            "echo_level"                         : 0,
+            "compute_reactions"                  : false,
+            "max_iteration"                      : 10,
+            "line_search"                        : false,
+            "convergence_criterion"              : "residual_criterion",
+            "solution_relative_tolerance"        : 1e-5,
+            "solution_absolute_tolerance"        : 1e-7,
+            "residual_relative_tolerance"        : 1e-5,
+            "residual_absolute_tolerance"        : 1e-7,
+            "problem_domain_sub_model_part_list" : ["thermal_ModelPart"],
+            "time_stepping"                      : {
+                "time_step" : 0.01
+            },
+            "transient_parameters"               : {
+                "theta"       : 0.5,
+                "dynamic_tau" : 1.0
+            }
+        }
+    },
+    "processes"        : {
+        "constraints_process_list" : [{
+            "python_module" : "apply_laser_process",
+            "kratos_module" : "KratosMultiphysics.PfemMeltingApplication",
+            "Parameters"    : {
+                "model_part_name" : "ModelPart",
+                "filename"        : "element_tests/constant_laser_on_box/LaserSettings.json"
+            }
+        }],
+        "auxiliar_process_list": [{
+            "python_module" : "from_json_check_result_process",
+            "kratos_module" : "KratosMultiphysics",
+            "Parameters"    : {
+                "check_variables"     : ["DECOMPOSITION"],
+                "input_file_name"     : "element_tests/constant_laser_on_box/constant_laser_on_box_results.json",
+                "model_part_name"      : "ModelPart",
+                "time_frequency"       : 0.02
+            }
+        }]
+    },
+    "_json_output_process": [{
+        "python_module" : "from_json_check_result_process",
+        "kratos_module" : "KratosMultiphysics",
+        "Parameters"    : {
+            "check_variables"     : ["DECOMPOSITION"],
+            "input_file_name"     : "element_tests/constant_laser_on_box/constant_laser_on_box_results.json",
+            "model_part_name"      : "ModelPart",
+            "time_frequency"       : 0.02
+        }
+    }],
+    "_other_json_output_process": [{
+        "python_module" : "json_output_process",
+        "kratos_module" : "KratosMultiphysics",
+        "Parameters"    : {
+            "output_variables"     : ["DECOMPOSITION"],
+            "output_file_name"     : "element_tests/constant_laser_on_box/constant_laser_on_box_results.json",
+            "model_part_name"      : "ModelPart",
+            "time_frequency"       : 0.02
+        }
+    }]
+}
