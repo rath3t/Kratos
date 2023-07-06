@@ -22,7 +22,7 @@ class PfemMeltingAnalysis(AnalysisStage):
         # Making sure that older cases still work by properly initalizing the parameters
         solver_settings = project_parameters["solver_settings"]
 
-        self.laser = apply_laser_process.Laser("LaserSettings.json")
+        self.laser = apply_laser_process.Laser(solver_settings["laser_import_settings"]["laser_filename"].GetString())
          
         if not solver_settings.Has("domain_size"):
             KratosMultiphysics.Logger.PrintInfo("PfemMeltingAnalysis", "Using the old way to pass the domain_size, this will be removed!")

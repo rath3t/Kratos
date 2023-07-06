@@ -101,12 +101,13 @@ class ApplyLaserProcess(KratosMultiphysics.Process):
             "model_part_name" : "CHOOSE_FLUID_MODELPART_NAME",
             "filename"        : "provide_the_name_of_the laser_file"
         }  """ )
-
+        self.settings = settings.Clone()
+        self.settings.ValidateAndAssignDefaults(default_settings)
 
         # Get the fluid model part from the Model container
-        self.fluid_model_part = Model[settings["model_part_name"].GetString()]
+        self.fluid_model_part = Model[self.settings["model_part_name"].GetString()]
 
-        self.laser = Laser("LaserSettings.json")
+        self.laser = Laser(self.settings["filename"].GetString())
 
         self.ApplyLaserProcess = PfemM.ApplyLaserProcess(self.fluid_model_part, self.laser.parameters)
 

@@ -32,6 +32,9 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
             "material_import_settings"    : {
                 "materials_filename" : "file_name_to_be_defined.json"
             },
+            "laser_import_settings": {
+                "laser_filename"     : "file_name_to_be_defined.json"
+            },
             "environment_settings" : {
                 "gravity": [0, 0, 0],
                 "ambient_temperature" : 0.15
@@ -110,18 +113,18 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
 
     def readmeshSettings(self):
 
-        with open("ProjectParameters.json",'r') as parameter_file:
-            project_parameters = KratosMultiphysics.Parameters(parameter_file.read())
+        # with open("ProjectParameters.json",'r') as parameter_file:
+        #     project_parameters = KratosMultiphysics.Parameters(parameter_file.read())
 
-        self.mesh_element_size=project_parameters["problem_data"]["mesh_element_size"]
+        self.mesh_element_size = self.settings["mesh_element_size"]
 
     def readenvironmentSettings(self):
-        with open("ProjectParameters.json",'r') as parameter_file:
-            project_parameters = KratosMultiphysics.Parameters(parameter_file.read())
+        # with open("ProjectParameters.json",'r') as parameter_file:
+        #     project_parameters = KratosMultiphysics.Parameters(parameter_file.read())
 
         self.gravity = []
-        self.ambient_temperature=project_parameters["problem_data"]["environment_settings"]["ambient_temperature"]
-        self.gravity=project_parameters["problem_data"]["environment_settings"]["gravity"]
+        self.ambient_temperature=self.settings["environment_settings"]["ambient_temperature"]
+        self.gravity=self.settings["environment_settings"]["gravity"]
 
         #materials_filename = self.settings["laser_import_settings"]["laser_filename"].GetString()
         #material_settings = KratosMultiphysics.Parameters("""{"Parameters": {"materials_filename": ""}} """)
