@@ -16,6 +16,7 @@
 
 // Project includes
 #include "utilities/geometrical_projection_utilities.h"
+#include "utilities/atomic_utilities.h"
 #include "custom_conditions/mesh_tying_mortar_condition.h"
 
 namespace Kratos
@@ -145,6 +146,9 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
 
         const bool dual_LM = CalculateAe(r_normal_master, Ae, rVariables, conditions_points_slave, this_integration_method);
 
+        // Warning in case of not using dual LM in static condensation (it is not possible)
+        KRATOS_WARNING_IF("MeshTyingMortarCondition", !dual_LM && mpParentSlaveElement != nullptr) << "ATTENTION: Dual LM formulation must be used to consider static condensation in condition " << this->Id() << ". This may mean that the mortar condition is distorted. Errors may be introduced" << std::endl;
+
         for (IndexType i_geom = 0; i_geom < conditions_points_slave.size(); ++i_geom) {
             PointerVector< PointType > points_array(TDim); // The points are stored as local coordinates, we calculate the global coordinates of this points
             for (IndexType i_node = 0; i_node < TDim; ++i_node) {
@@ -239,6 +243,60 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::FinalizeNonLinea
 
     BaseType::FinalizeNonLinearIteration(rCurrentProcessInfo);
 
+    // Update the lagrange multiplier after solving global system
+    if (mpParentSlaveElement != nullptr) {
+        // Lambda = -D^-1 * (rs + Kss * Delta u_s)
+        
+        // Mortar operators
+        const auto& r_DOperator = mMortarConditionMatrices.DOperator;
+
+        // Number of DoFs
+        const SizeType number_of_dofs_per_node = mpDoFVariables.size();
+        const SizeType number_of_dofs = TNumNodes * number_of_dofs_per_node;
+
+        // Initialize variables
+        Vector delta_u_s(number_of_dofs);
+
+        // Slave (condition) geometry
+        auto& r_slave_geometry = this->GetGeometry();
+
+        // Fill vector delta_u_s
+        IndexType index = 0;
+        for (IndexType i_node = 0; i_node < TNumNodes; ++i_node) {
+            auto& r_node = r_slave_geometry[i_node];
+            for (auto& p_variable : mpDoFVariables) {
+                delta_u_s[index] = r_node.FastGetSolutionStepValue(*p_variable, 1) - r_node.FastGetSolutionStepValue(*p_variable);
+                ++index;
+            }
+        }
+
+        // The inverse of D (assuming Dual LM and therefore diagonal matrix)
+        index = 0;
+        Matrix inverse_D_operator = ZeroMatrix(number_of_dofs, number_of_dofs);
+        for (IndexType i_node = 0; i_node < TNumNodes; ++i_node) {
+            const double inv_d = 1.0/r_DOperator(i_node, i_node);;
+            for (IndexType j = 0; j < number_of_dofs_per_node; ++j) {
+                inverse_D_operator(index, index) = inv_d;
+                ++index;
+            }
+        }
+        
+        // Compute the lagrange multiplier 
+        Vector auxiliary_lambda = mLocalSlaveRHSContribution + prod(mLocalSlaveElementContribution, delta_u_s); // (rs + Kss * Delta u_s)
+        auxiliary_lambda = - prod(inverse_D_operator, auxiliary_lambda); // -D^-1 * (rs + Kss * Delta u_s)
+
+        // Update the lagrange multiplier
+        index = 0;
+        for (IndexType i_node = 0; i_node < TNumNodes; ++i_node) {
+            auto& r_node = r_slave_geometry[i_node];
+            for (auto& p_lm : mpLMVariables) {
+                auto& r_value_lm = r_node.FastGetSolutionStepValue(*p_lm);
+                AtomicAdd(r_value_lm, auxiliary_lambda[index]);
+                ++index;
+            }
+        }
+    }
+
     KRATOS_CATCH( "" );
 }
 
@@ -255,7 +313,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalSy
     KRATOS_TRY;
 
     // Compute the matrix size
-    const SizeType matrix_size = mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster);
+    const SizeType matrix_size = mpParentSlaveElement == nullptr ? mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster) : mpDoFVariables.size() * (TNumNodes + TNumNodesMaster);
 
     // Resizing as needed the LHS
     if ( rLeftHandSideMatrix.size1() != matrix_size || rLeftHandSideMatrix.size2() != matrix_size ) {
@@ -283,7 +341,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLeftHan
     )
 {
     // Compute the matrix size
-    const SizeType matrix_size = mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster);
+    const SizeType matrix_size = mpParentSlaveElement == nullptr ? mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster) : mpDoFVariables.size() * (TNumNodes + TNumNodesMaster);
 
     // Resizing as needed the LHS
     if ( rLeftHandSideMatrix.size1() != matrix_size || rLeftHandSideMatrix.size2() != matrix_size ) {
@@ -310,7 +368,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateRightHa
     MatrixType aux_left_hand_side_matrix = Matrix();
 
     // Compute the matrix size
-    const SizeType matrix_size = mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster);
+    const SizeType matrix_size = mpParentSlaveElement == nullptr ? mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster) : mpDoFVariables.size() * (TNumNodes + TNumNodesMaster);
 
     // Resizing as needed the RHS
     if ( rRightHandSideVector.size() != matrix_size ) {
@@ -539,31 +597,36 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
     // Get the DoF size
     const SizeType dof_size = mpDoFVariables.size();
 
-    // Initial index 
-    IndexType initial_row_index = 0;
-    const IndexType initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
+    // Resolution with LM
+    if (mpParentSlaveElement == nullptr) {
+        // Initial index 
+        IndexType initial_row_index = 0;
+        const IndexType initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
 
-    // Iterate over the number of dofs on master side
-    for (IndexType i = 0; i < dof_size; ++i) {
-        for (IndexType j = 0; j < TNumNodesMaster; ++j) {
-            for (IndexType k = 0; k < TNumNodes; ++k) {
-                rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = - r_MOperator(k, j);
-                rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = - r_MOperator(k, j);
+        // Iterate over the number of dofs on master side
+        for (IndexType i = 0; i < dof_size; ++i) {
+            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+                for (IndexType k = 0; k < TNumNodes; ++k) {
+                    rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = - r_MOperator(k, j);
+                    rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = - r_MOperator(k, j);
+                }
             }
         }
-    }
-    
-    // Update intial index
-    initial_row_index = dof_size * TNumNodesMaster;
+        
+        // Update intial index
+        initial_row_index = dof_size * TNumNodesMaster;
 
-    // Iterate over the number of dofs on slave side
-    for (IndexType i = 0; i < dof_size; ++i) {
-        for (IndexType j = 0; j < TNumNodes; ++j) {
-            for (IndexType k = 0; k < TNumNodes; ++k) {
-                rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = r_DOperator(k, j);
-                rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = r_DOperator(k, j);
+        // Iterate over the number of dofs on slave side
+        for (IndexType i = 0; i < dof_size; ++i) {
+            for (IndexType j = 0; j < TNumNodes; ++j) {
+                for (IndexType k = 0; k < TNumNodes; ++k) {
+                    rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = r_DOperator(k, j);
+                    rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = r_DOperator(k, j);
+                }
             }
         }
+    } else { // Consider static condensation
+        // TODO: Add the static condensation
     }
 
     // // Debugging
@@ -589,36 +652,42 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
     const auto& r_MOperator = rMortarConditionMatrices.MOperator;
     const auto& r_DOperator = rMortarConditionMatrices.DOperator;
 
-    // Get the DoF size
-    const SizeType dof_size = mpDoFVariables.size();
+    // Resolution with LM
+    if (mpParentSlaveElement == nullptr) {
+        // Get the DoF size
+        const SizeType dof_size = mpDoFVariables.size();
 
-    // Initial index 
-    IndexType initial_index = 0;
+        // Initial index 
+        IndexType initial_index = 0;
 
-    // Master side
-    const Matrix Mlm = prod(trans(r_MOperator), r_lm);
-    for (IndexType i = 0; i < TNumNodesMaster; ++i) {
-        for (IndexType j = 0; j < dof_size; ++j) {
-            rLocalRHS[initial_index + i * dof_size + j] = Mlm(i, j);
+        // Master side
+        const Matrix Mlm = prod(trans(r_MOperator), r_lm);
+        for (IndexType i = 0; i < TNumNodesMaster; ++i) {
+            for (IndexType j = 0; j < dof_size; ++j) {
+                rLocalRHS[initial_index + i * dof_size + j] = Mlm(i, j);
+            }
         }
-    }
 
-    // Slave side
-    initial_index = TNumNodesMaster * dof_size;
-    const Matrix Dlm = prod(trans(r_DOperator), r_lm);
-    for (IndexType i = 0; i < TNumNodes; ++i) {
-        for (IndexType j = 0; j < dof_size; ++j) {
-            rLocalRHS[initial_index + i * dof_size + j] = - Dlm(i, j);
+        // Slave side
+        initial_index = TNumNodesMaster * dof_size;
+        const Matrix Dlm = prod(trans(r_DOperator), r_lm);
+        for (IndexType i = 0; i < TNumNodes; ++i) {
+            for (IndexType j = 0; j < dof_size; ++j) {
+                rLocalRHS[initial_index + i * dof_size + j] = - Dlm(i, j);
+            }
         }
-    }
 
-    // LM slave side
-    initial_index = (TNumNodes + TNumNodesMaster) * dof_size;
-    const Matrix Du1Mu2 = prod(r_DOperator, r_u1) - prod(r_MOperator, r_u2);
-    for (IndexType i = 0; i < TNumNodes; ++i) {
-        for (IndexType j = 0; j < dof_size; ++j) {
-            rLocalRHS[initial_index + i * dof_size + j] = - Du1Mu2(i, j);
+        // LM slave side
+        initial_index = (TNumNodes + TNumNodesMaster) * dof_size;
+        const Matrix Du1Mu2 = prod(r_DOperator, r_u1) - prod(r_MOperator, r_u2);
+        for (IndexType i = 0; i < TNumNodes; ++i) {
+            for (IndexType j = 0; j < dof_size; ++j) {
+                rLocalRHS[initial_index + i * dof_size + j] = - Du1Mu2(i, j);
+            }
         }
+    } else { // Consider static condensation
+        // TODO: Add the static condensation
+        // TODO: Move out of the if the common components
     }
 
     // // Debugging
@@ -637,7 +706,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::EquationIdVector
     KRATOS_TRY;
 
     // Compute the matrix size
-    const SizeType matrix_size = mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster);
+    const SizeType matrix_size = mpParentSlaveElement == nullptr ? mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster) : mpDoFVariables.size() * (TNumNodes + TNumNodesMaster);
 
     if (rResult.size() != matrix_size) {
         rResult.resize( matrix_size, false );
@@ -645,7 +714,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::EquationIdVector
 
     IndexType index = 0;
 
-    /* ORDER - [ MASTER, SLAVE, LM ] */
+    /* ORDER - [ MASTER, SLAVE ] */
     // Master Nodes DoF Equation IDs
     const GeometryType& r_current_master = this->GetPairedGeometry();
     for ( IndexType i_master = 0; i_master < TNumNodesMaster; ++i_master ) {
@@ -665,11 +734,15 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::EquationIdVector
         }
     }
 
-    // Slave Nodes LM Equation IDs
-    for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {
-        const Node& r_slave_node = r_current_slave[i_slave];
-        for (auto& p_var : mpLMVariables) {
-            rResult[index++] = r_slave_node.GetDof(*p_var).EquationId( );
+    // Resolution with LM
+    if (mpParentSlaveElement == nullptr) {
+        /* ORDER - [ MASTER, SLAVE, LM ] */
+        // Slave Nodes LM Equation IDs
+        for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {
+            const Node& r_slave_node = r_current_slave[i_slave];
+            for (auto& p_var : mpLMVariables) {
+                rResult[index++] = r_slave_node.GetDof(*p_var).EquationId( );
+            }
         }
     }
 
@@ -688,7 +761,7 @@ void MeshTyingMortarCondition<TDim, TNumNodes, TNumNodesMaster>::GetDofList(
     KRATOS_TRY;
 
     // Compute the matrix size
-    const SizeType matrix_size = mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster);
+    const SizeType matrix_size = mpParentSlaveElement == nullptr ? mpDoFVariables.size() * (2 * TNumNodes + TNumNodesMaster) : mpDoFVariables.size() * (TNumNodes + TNumNodesMaster);
 
     if (rConditionalDofList.size() != matrix_size) {
         rConditionalDofList.resize( matrix_size );
@@ -696,7 +769,7 @@ void MeshTyingMortarCondition<TDim, TNumNodes, TNumNodesMaster>::GetDofList(
 
     IndexType index = 0;
 
-    /* ORDER - [ MASTER, SLAVE, LM ] */
+    /* ORDER - [ MASTER, SLAVE] */
     // Master Nodes DoF Equation IDs
     const GeometryType& r_current_master = this->GetPairedGeometry();
     for ( IndexType i_master = 0; i_master < TNumNodesMaster; ++i_master ) {
@@ -716,11 +789,15 @@ void MeshTyingMortarCondition<TDim, TNumNodes, TNumNodesMaster>::GetDofList(
         }
     }
 
-    // Slave Nodes LM Equation IDs
-    for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {
-        const Node& r_slave_node = r_current_slave[i_slave];
-        for (auto& p_var : mpLMVariables) {
-            rConditionalDofList[index++] = r_slave_node.pGetDof(*p_var);
+    // Resolution with LM
+    if (mpParentSlaveElement == nullptr) {
+        /* ORDER - [ MASTER, SLAVE, LM ] */
+        // Slave Nodes LM Equation IDs
+        for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {
+            const Node& r_slave_node = r_current_slave[i_slave];
+            for (auto& p_var : mpLMVariables) {
+                rConditionalDofList[index++] = r_slave_node.pGetDof(*p_var);
+            }
         }
     }
 
