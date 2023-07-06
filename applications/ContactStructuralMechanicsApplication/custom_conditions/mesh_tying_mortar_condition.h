@@ -455,16 +455,18 @@ protected:
     ///@{
 
     /* Mortar Operators */
-    MortarConditionMatrices mMortarConditionMatrices;    /// The mortar operators
+    MortarConditionMatrices mMortarConditionMatrices;       /// The mortar operators
 
     /* The DoF variables */
-    std::vector<const Variable<double>*> mpDoFVariables; /// The list of DoF variables
-    std::vector<const Variable<double>*> mpLMVariables;  /// The list of LM variables
+    std::vector<const Variable<double>*> mpDoFVariables;    /// The list of DoF variables
+    std::vector<const Variable<double>*> mpLMVariables;     /// The list of LM variables
 
     /* Static condensation slave element information */
-    Element::Pointer mpParentSlaveElement = nullptr;     /// The pointer to the slave element (used in the static condensation)
-    Vector mLocalSlaveRHSContribution;                   /// The local RHS contribution of the slave side dofs (used in the static condensation)
-    Matrix mLocalSlaveElementContribution;               /// The local contribution of the slave element (used in the static condensation)
+    Element::Pointer mpParentSlaveElement = nullptr;        /// The pointer to the slave element (used in the static condensation)
+    Vector mLocalSlaveRHSContribution;                      /// The local RHS contribution of the slave side dofs (used in the static condensation)
+    bool mLocalSlaveRHSContributionInitialized = false;     /// Flag to know if the local RHS contribution of the slave side dofs is initialized (used in the static condensation)
+    Matrix mLocalSlaveElementContribution;                  /// The local contribution of the slave element (used in the static condensation)
+    bool mLocalSlaveElementContributionInitialized = false; /// Flag to know if the local contribution of the slave element is initialized (used in the static condensation)
 
     ///@}
     ///@name Protected Operators

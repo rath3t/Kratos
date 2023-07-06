@@ -295,6 +295,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::FinalizeNonLinea
                 ++index;
             }
         }
+
+        // Reset flags
+        mLocalSlaveRHSContributionInitialized = false;
+        mLocalSlaveElementContributionInitialized = false;
     }
 
     KRATOS_CATCH( "" );
@@ -597,11 +601,13 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
     // Get the DoF size
     const SizeType dof_size = mpDoFVariables.size();
 
+    // Initial index 
+    IndexType initial_row_index = 0;
+    IndexType initial_column_index = 0;
+
     // Resolution with LM
     if (mpParentSlaveElement == nullptr) {
-        // Initial index 
-        IndexType initial_row_index = 0;
-        const IndexType initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
+        initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
 
         // Iterate over the number of dofs on master side
         for (IndexType i = 0; i < dof_size; ++i) {
@@ -627,6 +633,39 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         }
     } else { // Consider static condensation
         // TODO: Add the static condensation
+        // Master side (KMM[aka 0, added in element]-P^T KSS P  0)
+        BoundedMatrix<double, TNumNodes, TNumNodes> inverse_D_operator = ZeroMatrix(TNumNodes, TNumNodes);
+        for (IndexType i = 0; i < TNumNodes; ++i) {
+            inverse_D_operator(i, i) = 1.0/r_DOperator(i, i);
+        }
+        const BoundedMatrix<double, TNumNodes, TNumNodesMaster> POperator = prod(inverse_D_operator, r_MOperator);
+        const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans = prod(trans(r_MOperator), inverse_D_operator);
+
+        // TODO
+
+        // Slave side (- M D)
+        initial_row_index = dof_size * TNumNodesMaster;
+
+        // Iterate over the number of dofs on master side
+        for (IndexType i = 0; i < dof_size; ++i) {
+            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+                for (IndexType k = 0; k < TNumNodes; ++k) {
+                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = - r_MOperator(k, j);
+                }
+            }
+        }
+        
+        // Update intial index
+        initial_column_index = dof_size * TNumNodesMaster;
+
+        // Iterate over the number of dofs on slave side
+        for (IndexType i = 0; i < dof_size; ++i) {
+            for (IndexType j = 0; j < TNumNodes; ++j) {
+                for (IndexType k = 0; k < TNumNodes; ++k) {
+                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = r_DOperator(k, j);
+                }
+            }
+        }
     }
 
     // // Debugging
@@ -652,16 +691,19 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
     const auto& r_MOperator = rMortarConditionMatrices.MOperator;
     const auto& r_DOperator = rMortarConditionMatrices.DOperator;
 
+    // Get the DoF size
+    const SizeType dof_size = mpDoFVariables.size();
+
+    // Initial index 
+    IndexType initial_index = 0;
+
+    // Contributions of master and slave side
+    const Matrix Mlm = prod(trans(r_MOperator), r_lm);
+    const Matrix Dlm = prod(trans(r_DOperator), r_lm);
+
     // Resolution with LM
     if (mpParentSlaveElement == nullptr) {
-        // Get the DoF size
-        const SizeType dof_size = mpDoFVariables.size();
-
-        // Initial index 
-        IndexType initial_index = 0;
-
         // Master side
-        const Matrix Mlm = prod(trans(r_MOperator), r_lm);
         for (IndexType i = 0; i < TNumNodesMaster; ++i) {
             for (IndexType j = 0; j < dof_size; ++j) {
                 rLocalRHS[initial_index + i * dof_size + j] = Mlm(i, j);
@@ -670,7 +712,6 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
 
         // Slave side
         initial_index = TNumNodesMaster * dof_size;
-        const Matrix Dlm = prod(trans(r_DOperator), r_lm);
         for (IndexType i = 0; i < TNumNodes; ++i) {
             for (IndexType j = 0; j < dof_size; ++j) {
                 rLocalRHS[initial_index + i * dof_size + j] = - Dlm(i, j);
@@ -686,8 +727,29 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
             }
         }
     } else { // Consider static condensation
-        // TODO: Add the static condensation
-        // TODO: Move out of the if the common components
+        // Master side (rM + Pt rS)
+        BoundedMatrix<double, TNumNodes, TNumNodes> inverse_D_operator = ZeroMatrix(TNumNodes, TNumNodes);
+        for (IndexType i = 0; i < TNumNodes; ++i) {
+            inverse_D_operator(i, i) = 1.0/r_DOperator(i, i);
+        }
+        const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans = prod(trans(r_MOperator), inverse_D_operator);
+
+        // Master side
+        const Matrix PT_x_minus_Dlm = prod(POperator_trans, -Dlm);
+        for (IndexType i = 0; i < TNumNodesMaster; ++i) {
+            for (IndexType j = 0; j < dof_size; ++j) {
+                rLocalRHS[initial_index + i * dof_size + j] = Mlm(i, j) + PT_x_minus_Dlm(i, j);
+            }
+        }
+
+        // Slave side (Zero)
+        initial_index = TNumNodesMaster * dof_size;
+        for (IndexType i = 0; i < TNumNodes; ++i) {
+            for (IndexType j = 0; j < dof_size; ++j) {
+                rLocalRHS[initial_index + i * dof_size + j] = 0.0;
+            }
+        }
+
     }
 
     // // Debugging
