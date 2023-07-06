@@ -441,13 +441,13 @@ void MeshTyingMortarCondition<TDim, TNumNodes, TNumNodesMaster>::CalculateCondit
     // Assemble of the matrix is required
     if ( ComputeLHS ) {
         // Calculate the local contribution
-        this->CalculateLocalLHS(rLeftHandSideMatrix, mMortarConditionMatrices, dof_data);
+        this->CalculateLocalLHS(rLeftHandSideMatrix, mMortarConditionMatrices, dof_data, rCurrentProcessInfo);
     }
 
     // Assemble of the vector is required
     if ( ComputeRHS) {
         // Calculate the local contribution
-        this->CalculateLocalRHS( rRightHandSideVector, mMortarConditionMatrices, dof_data);
+        this->CalculateLocalRHS( rRightHandSideVector, mMortarConditionMatrices, dof_data, rCurrentProcessInfo);
     }
 
     KRATOS_CATCH( "" );
@@ -588,7 +588,8 @@ template<SizeType TDim, SizeType TNumNodes, SizeType TNumNodesMaster>
 void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLHS(
     Matrix& rLocalLHS,
     const MortarConditionMatrices& rMortarConditionMatrices,
-    const DofData& rDofData
+    const DofData& rDofData,
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     // We get the mortar operators
@@ -641,6 +642,16 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         const BoundedMatrix<double, TNumNodes, TNumNodesMaster> POperator = prod(inverse_D_operator, r_MOperator);
         const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans = prod(trans(r_MOperator), inverse_D_operator);
 
+        // Retrieve KSS
+        if (!mLocalSlaveElementContributionInitialized) {
+            Matrix whole_slave_element_lhs;
+            mpParentSlaveElement->CalculateLeftHandSide(whole_slave_element_lhs, rCurrentProcessInfo);
+            mLocalSlaveElementContributionInitialized = true;
+
+            // TODO: Extract corresponding dofs
+            // mLocalSlaveElementContribution
+        }
+
         // TODO
 
         // Slave side (- M D)
@@ -679,7 +690,8 @@ template<SizeType TDim, SizeType TNumNodes, SizeType TNumNodesMaster>
 void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRHS(
     Vector& rLocalRHS,
     const MortarConditionMatrices& rMortarConditionMatrices,
-    const DofData& rDofData
+    const DofData& rDofData,
+    const ProcessInfo& rCurrentProcessInfo
     )
 {
     // Initialize values
@@ -750,6 +762,19 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
             }
         }
 
+        // Saving the local contribution of the slave side
+        if (!mLocalSlaveRHSContributionInitialized) {
+            const SizeType slave_dofs = TNumNodes * dof_size;
+            if (mLocalSlaveRHSContribution.size() != slave_dofs) {
+                mLocalSlaveRHSContribution.resize(slave_dofs, false);
+            }
+            for (IndexType i = 0; i < TNumNodes; ++i) {
+                for (IndexType j = 0; j < dof_size; ++j) {
+                    mLocalSlaveRHSContribution[i * dof_size + j] = - Dlm(i, j);
+                }
+            }
+            mLocalSlaveRHSContributionInitialized = true;
+        }
     }
 
     // // Debugging
