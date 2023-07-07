@@ -21,6 +21,14 @@
 
 namespace Kratos
 {
+/// Local Flags
+template< SizeType TDim, SizeType TNumNodes, SizeType TNumNodesMaster>
+const Kratos::Flags MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::STATIC_CONDENSATION_LM(Kratos::Flags::Create(0));
+template< SizeType TDim, SizeType TNumNodes, SizeType TNumNodesMaster>
+const Kratos::Flags MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::LOCAL_SLAVE_RHS_CONTRIBUTION_INITIALIZED(Kratos::Flags::Create(1));
+template< SizeType TDim, SizeType TNumNodes, SizeType TNumNodesMaster>
+const Kratos::Flags MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED(Kratos::Flags::Create(2));
+
 /************************************* OPERATIONS **********************************/
 /***********************************************************************************/
 
@@ -297,8 +305,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::FinalizeNonLinea
         }
 
         // Reset flags
-        mLocalSlaveRHSContributionInitialized = false;
-        mLocalSlaveElementContributionInitialized = false;
+        mOptions.Set(MeshTyingMortarCondition::LOCAL_SLAVE_RHS_CONTRIBUTION_INITIALIZED, false);
+        mOptions.Set(MeshTyingMortarCondition::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED, false);
     }
 
     KRATOS_CATCH( "" );
@@ -610,7 +618,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
     IndexType initial_column_index = 0;
 
     // Resolution with LM
-    if (mpParentSlaveElement == nullptr) {
+    if (mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) {
         initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
 
         // Iterate over the number of dofs on master side
@@ -649,10 +657,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans = prod(trans(r_MOperator), inverse_D_operator);
 
         // Retrieve KSS
-        if (!mLocalSlaveElementContributionInitialized) {
+        if (mOptions.IsNot(MeshTyingMortarCondition::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED)) {
             Matrix whole_slave_element_lhs;
             mpParentSlaveElement->CalculateLeftHandSide(whole_slave_element_lhs, rCurrentProcessInfo);
-            mLocalSlaveElementContributionInitialized = true;
+            mOptions.Set(MeshTyingMortarCondition::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED, true);
 
             // TODO: Extract corresponding dofs
             // mLocalSlaveElementContribution
@@ -723,7 +731,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
     const Matrix Dlm = scale_factor * prod(trans(r_DOperator), r_lm);
 
     // Resolution with LM
-    if (mpParentSlaveElement == nullptr) {
+    if (mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) {
         // Master side
         for (IndexType i = 0; i < TNumNodesMaster; ++i) {
             for (IndexType j = 0; j < dof_size; ++j) {
@@ -773,7 +781,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
         }
 
         // Saving the local contribution of the slave side
-        if (!mLocalSlaveRHSContributionInitialized) {
+        if (mOptions.IsNot(MeshTyingMortarCondition::LOCAL_SLAVE_RHS_CONTRIBUTION_INITIALIZED)) {
             const SizeType slave_dofs = TNumNodes * dof_size;
             if (mLocalSlaveRHSContribution.size() != slave_dofs) {
                 mLocalSlaveRHSContribution.resize(slave_dofs, false);
@@ -783,7 +791,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalRH
                     mLocalSlaveRHSContribution[i * dof_size + j] = - Dlm(i, j);
                 }
             }
-            mLocalSlaveRHSContributionInitialized = true;
+
+            mOptions.Set(MeshTyingMortarCondition::LOCAL_SLAVE_RHS_CONTRIBUTION_INITIALIZED, true);
         }
     }
 
@@ -832,7 +841,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::EquationIdVector
     }
 
     // Resolution with LM
-    if (mpParentSlaveElement == nullptr) {
+    if (mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) {
         /* ORDER - [ MASTER, SLAVE, LM ] */
         // Slave Nodes LM Equation IDs
         for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {
@@ -887,7 +896,7 @@ void MeshTyingMortarCondition<TDim, TNumNodes, TNumNodesMaster>::GetDofList(
     }
 
     // Resolution with LM
-    if (mpParentSlaveElement == nullptr) {
+    if (mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) {
         /* ORDER - [ MASTER, SLAVE, LM ] */
         // Slave Nodes LM Equation IDs
         for ( IndexType i_slave = 0; i_slave < TNumNodes; ++i_slave ) {

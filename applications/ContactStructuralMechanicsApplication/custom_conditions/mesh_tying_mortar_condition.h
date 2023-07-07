@@ -73,6 +73,11 @@ public:
     /// Counted pointer of MeshTyingMortarCondition
     KRATOS_CLASS_INTRUSIVE_POINTER_DEFINITION( MeshTyingMortarCondition );
 
+    /// Local Flags
+    KRATOS_DEFINE_LOCAL_FLAG( STATIC_CONDENSATION_LM );                       /// If the LM static condensation is performed
+    KRATOS_DEFINE_LOCAL_FLAG( LOCAL_SLAVE_RHS_CONTRIBUTION_INITIALIZED );     /// Flag to know if the local RHS contribution of the slave side dofs is initialized (used in the static condensation)
+    KRATOS_DEFINE_LOCAL_FLAG( LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED ); /// Flag to know if the local contribution of the slave element is initialized (used in the static condensation)
+
     /// Base class definitions
     using BaseType = PairedCondition;
 
@@ -176,7 +181,6 @@ public:
     ///@}
     ///@name Operators
     ///@{
-
 
     ///@}
     ///@name Operations
@@ -464,9 +468,12 @@ protected:
     /* Static condensation slave element information */
     Element::Pointer mpParentSlaveElement = nullptr;        /// The pointer to the slave element (used in the static condensation)
     Vector mLocalSlaveRHSContribution;                      /// The local RHS contribution of the slave side dofs (used in the static condensation)
-    bool mLocalSlaveRHSContributionInitialized = false;     /// Flag to know if the local RHS contribution of the slave side dofs is initialized (used in the static condensation)
     Matrix mLocalSlaveElementContribution;                  /// The local contribution of the slave element (used in the static condensation)
-    bool mLocalSlaveElementContributionInitialized = false; /// Flag to know if the local contribution of the slave element is initialized (used in the static condensation)
+
+    // TODO: Replace the pointer for the data value container defining a variable (if it doesn't exist)
+    // TODO: Create a process to assign the slave element to the condition
+
+    Flags mOptions; /// Local flags
 
     ///@}
     ///@name Protected Operators
