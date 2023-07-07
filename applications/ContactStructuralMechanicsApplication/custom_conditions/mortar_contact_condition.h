@@ -35,7 +35,6 @@
 
 namespace Kratos
 {
-
 ///@name Kratos Globals
 ///@{
 
@@ -445,11 +444,6 @@ public:
     }
 
     ///@}
-    ///@name Friends
-    ///@{
-
-    ///@}
-
 protected:
     ///@name Protected static Member Variables
     ///@{
