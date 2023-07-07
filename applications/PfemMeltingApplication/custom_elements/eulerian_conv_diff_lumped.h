@@ -130,7 +130,9 @@ public:
         {
             for ( unsigned int i = 0; i < TNumNodes; i++ )
             {
-                Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - Geom[i].FastGetSolutionStepValue(DECOMPOSITION));
+                // TODO. This needs to be reviewed...
+                // Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - Geom[i].FastGetSolutionStepValue(DECOMPOSITION));
+                Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - 0.0);
             }
         }
         // TODO. Testing
