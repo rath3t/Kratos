@@ -1,4 +1,5 @@
 import os
+import json
 
 # Importing the Kratos Library
 import KratosMultiphysics
@@ -21,6 +22,7 @@ class controlledExecutionScope:
 
 # General test factory
 class TestFactory(KratosUnittest.TestCase):
+    debug_mode = False
 
     def setUp(self):
         with controlledExecutionScope(os.path.dirname(os.path.realpath(__file__))):
@@ -29,6 +31,9 @@ class TestFactory(KratosUnittest.TestCase):
             with open(self.file_parameters,'r') as parameter_file:
                 parameters = KratosMultiphysics.Parameters(parameter_file.read())
 
+            if not self.debug_mode:
+                parameters['output_processes'] = KratosMultiphysics.Parameters("""{}""")
+            
             # Create Model
             model = KratosMultiphysics.Model()
 
