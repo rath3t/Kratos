@@ -116,7 +116,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         # with open("ProjectParameters.json",'r') as parameter_file:
         #     project_parameters = KratosMultiphysics.Parameters(parameter_file.read())
 
-        self.mesh_element_size = self.settings["mesh_element_size"]
+        self.mesh_element_size = self.settings["mesh_element_size"].GetDouble()
 
     def readenvironmentSettings(self):
         # with open("ProjectParameters.json",'r') as parameter_file:
@@ -389,7 +389,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
 
     def ReMesh(self):
         for node in self.fluid_solver.main_model_part.Nodes:
-            node.SetSolutionStepValue(KratosMultiphysics.NODAL_H,0,self.mesh_element_size.GetDouble());
+            node.SetSolutionStepValue(KratosMultiphysics.NODAL_H,0,self.mesh_element_size);
 
         for node in (self.fluid_solver.main_model_part).Nodes:
             node.Set(KratosMultiphysics.TO_ERASE, False)

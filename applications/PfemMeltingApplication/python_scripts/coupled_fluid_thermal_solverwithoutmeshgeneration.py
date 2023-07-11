@@ -30,6 +30,12 @@ class PfemCoupledFluidThermalSolver(BaseClass):
         self.fluid_solver.PrepareModelPart()
         self.thermal_solver.PrepareModelPart()
 
+        # Calculate average element size
+        average_element_size = 0.0
+        for element in self.fluid_solver.main_model_part.Elements:
+            average_element_size += element.GetGeometry().Length()
+        self.mesh_element_size = average_element_size / len(self.fluid_solver.main_model_part.Elements)
+
         for node in self.fluid_solver.main_model_part.Nodes:
             node.SetSolutionStepValue(KratosMultiphysics.IS_STRUCTURE,0, 0.0)
         parametersf=self.settings["fluid_solver_settings"]
@@ -82,7 +88,7 @@ class PfemCoupledFluidThermalSolver(BaseClass):
 
     def ReMesh(self):
         for node in self.fluid_solver.main_model_part.Nodes:
-            node.SetSolutionStepValue(KratosMultiphysics.NODAL_H,0,self.mesh_element_size.GetDouble());
+            node.SetSolutionStepValue(KratosMultiphysics.NODAL_H,0,self.mesh_element_size);
 
         for node in (self.fluid_solver.main_model_part).Nodes:
             node.Set(KratosMultiphysics.TO_ERASE, False)
@@ -190,7 +196,7 @@ class PfemCoupledFluidThermalSolver(BaseClass):
 
         self.inverted=False
 
-        self.inverted=self.Streamline.CheckInvertElement(self.fluid_solver.main_model_part,self.domain_size,self.mesh_element_size.GetDouble())
+        self.inverted=self.Streamline.CheckInvertElement(self.fluid_solver.main_model_part,self.domain_size,self.mesh_element_size)
 
         self.AuxReMesh()
 
