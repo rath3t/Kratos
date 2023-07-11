@@ -7,8 +7,7 @@ import TestFactory as TF
 import KratosMultiphysics.KratosUnittest as KratosUnittest
 
 class constant_laser_on_box(TF.TestFactory):
-     file_name = "element_tests/constant_laser_on_box/constant_laser_on_box"
-     file_parameters = "element_tests/constant_laser_on_box/ProjectParameters.json"
+    file_parameters = "element_tests/constant_laser_on_box/ProjectParameters.json"
 
 
 def SetTestSuite(suites):
