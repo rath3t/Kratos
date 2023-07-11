@@ -8,7 +8,37 @@
         "domain_size"          : 3
     },
     "output_processes" : {
-        "gid_output" : [],
+        "gid_output" : [{
+            "python_module" : "gid_output_process",
+            "kratos_module" : "KratosMultiphysics",
+            "process_name"  : "GiDOutputProcess",
+            "help"          : "This process writes postprocessing files for GiD",
+            "Parameters"    : {
+                "model_part_name"        : "ModelPart",
+                "postprocess_parameters" : {
+                    "result_file_configuration" : {
+                        "gidpost_flags"               : {
+                            "GiDPostMode"           : "GiD_PostBinary",
+                            "WriteDeformedMeshFlag" : "WriteDeformed",
+                            "WriteConditionsFlag"   : "WriteConditions",
+                            "MultiFileFlag"         : "MultipleFiles"
+                        },
+                        "file_label"                  : "step",
+                        "output_control_type"         : "step",
+                        "output_interval"             : 1,
+                        "body_output"                 : true,
+                        "node_output"                 : false,
+                        "skin_output"                 : false,
+                        "plane_output"                : [],
+                        "nodal_results"               : ["VELOCITY","PRESSURE","TEMPERATURE","FACE_HEAT_FLUX","BODY_FORCE","ARRHENIUS_COEFFICIENT","VISCOSITY","CONDUCTIVITY","SPECIFIC_HEAT","IS_STRUCTURE","IS_FREE_SURFACE","DECOMPOSITION","NORMAL"],
+                        "gauss_point_results"         : [],
+                        "nodal_nonhistorical_results" : []
+                    },
+                    "point_data_configuration"  : []
+                },
+                "output_name"            : "element_tests/constant_laser_on_box/gid_output/constant_laser_on_box"
+            }
+        }],
         "vtk_output" : []
     },
     "restart_options"  : {
