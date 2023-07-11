@@ -735,7 +735,7 @@ void MovingParticles(ModelPart& rModelPart, unsigned int substeps)
 
 
      	     	        /////
-     	     	        if(vol<= 0.01*vol_r || vol> 2.5*vol_r )//or erase_node==true)  //0.001
+     	     	        if(false && (vol<= 0.01*vol_r || vol> 2.5*vol_r) )//or erase_node==true)  //0.001
 
 	     	        {
 	     	        	inverted=true;
