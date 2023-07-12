@@ -60,10 +60,8 @@ namespace Kratos
       {
         KRATOS_TRY
 
-        double density=0.0;
         double activation_energy=0.0;
         double arrhenius_coefficient=0.0;
-        double heat_of_vaporization=0.0;
         double temperature=0.0;
         double R=8.31; //universal gas constant
         double aux_var_polymer=0.0;
@@ -73,15 +71,9 @@ namespace Kratos
 
         for (ModelPart::NodesContainerType::iterator node_it = rLagrangianModelPart.NodesBegin();node_it != rLagrangianModelPart.NodesEnd(); ++node_it)
 	      {
-            node_it->FastGetSolutionStepValue(HEAT_FLUX) = 0.0;
-
-            density= node_it->FastGetSolutionStepValue(DENSITY);
-
             activation_energy= node_it->FastGetSolutionStepValue(ACTIVATION_ENERGY);
 
             arrhenius_coefficient= node_it->FastGetSolutionStepValue(ARRHENIUS_COEFFICIENT);
-
-            heat_of_vaporization= node_it->FastGetSolutionStepValue(HEAT_OF_VAPORIZATION);
 
             temperature= node_it->FastGetSolutionStepValue(TEMPERATURE);
 
@@ -91,8 +83,6 @@ namespace Kratos
             aux_var_polymer = arrhenius_coefficient * exp(-E_over_R_polymer/temperature) \
                                                     * std::pow(0.01 + decomposition, m_carb) \
                                                     * std::pow(std::max(1.0 - decomposition, 0.0), n_carb);
-
-            node_it->FastGetSolutionStepValue(HEAT_FLUX) = (-1.0) * density * heat_of_vaporization * aux_var_polymer;
 
             node_it->FastGetSolutionStepValue(DECOMPOSITION) += aux_var_polymer * delta_time;
 

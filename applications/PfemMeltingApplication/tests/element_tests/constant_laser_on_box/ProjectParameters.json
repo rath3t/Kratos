@@ -30,7 +30,7 @@
                         "node_output"                 : false,
                         "skin_output"                 : false,
                         "plane_output"                : [],
-                        "nodal_results"               : ["VELOCITY","PRESSURE","TEMPERATURE","FACE_HEAT_FLUX","BODY_FORCE","ARRHENIUS_COEFFICIENT","VISCOSITY","CONDUCTIVITY","SPECIFIC_HEAT","IS_STRUCTURE","IS_FREE_SURFACE","DECOMPOSITION","NORMAL"],
+                        "nodal_results"               : ["VELOCITY","PRESSURE","TEMPERATURE","FACE_HEAT_FLUX","BODY_FORCE","ARRHENIUS_COEFFICIENT","VISCOSITY","CONDUCTIVITY","SPECIFIC_HEAT","IS_STRUCTURE","IS_FREE_SURFACE","DECOMPOSITION","NORMAL","HEAT_FLUX"],
                         "gauss_point_results"         : [],
                         "nodal_nonhistorical_results" : []
                     },
