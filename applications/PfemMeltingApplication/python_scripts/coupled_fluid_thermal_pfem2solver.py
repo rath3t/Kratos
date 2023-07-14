@@ -241,7 +241,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.ARRHENIUS_VALUE)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.CARBONIZATION)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION)
-        self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION_THRESHOLD)
+
 
         self.thermal_solver.AddVariables()
 
@@ -284,7 +284,7 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
             if self.fluid_solver.main_model_part.HasNodalSolutionStepVariable(variable):
                 KratosMultiphysics.VariableUtils().SetVariable(variable, self.values_aux[i].GetDouble(), self.fluid_solver.main_model_part.Nodes)
             i += 1
-        
+
         for node in self.fluid_solver.main_model_part.Nodes:
             node.SetSolutionStepValue(KratosMultiphysics.BODY_FORCE_X,0,self.gravity[0].GetDouble())
             node.SetSolutionStepValue(KratosMultiphysics.BODY_FORCE_Y,0,self.gravity[1].GetDouble())

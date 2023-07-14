@@ -91,64 +91,6 @@ namespace Kratos
         KRATOS_CATCH("")
 	    }
 
-      void ElementDeactivation(ModelPart & rLagrangianModelPart)
-      {
-        KRATOS_TRY
-
-        // const ProcessInfo& CurrentProcessInfo = rLagrangianModelPart.GetProcessInfo();
-
-        int NElems = static_cast<int>(rLagrangianModelPart.Elements().size());
-        ModelPart::ElementsContainerType::iterator el_begin = rLagrangianModelPart.ElementsBegin();
-        #pragma omp parallel for
-        for(int i = 0; i < NElems; i++)
-        {
-            ModelPart::ElementsContainerType::iterator itElem = el_begin + i;
-            Element::GeometryType& rGeom = itElem->GetGeometry();
-            const unsigned int NumNodes = rGeom.PointsNumber();
-            double average_decomposition = 0.0;
-            double average_decomposition_threshold = 0.0;
-            for ( unsigned int node = 0; node < NumNodes; node++ )
-            {
-              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
-              average_decomposition_threshold += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION_THRESHOLD);
-            }
-            average_decomposition = average_decomposition/NumNodes;
-            average_decomposition_threshold = average_decomposition_threshold/NumNodes;
-            
-            if(average_decomposition > average_decomposition_threshold){
-              itElem->Set(ACTIVE, false);
-            }
-        }
-
-        int NCons = static_cast<int>(rLagrangianModelPart.Conditions().size());
-        ModelPart::ConditionsContainerType::iterator cond_begin = rLagrangianModelPart.ConditionsBegin();
-        #pragma omp parallel for
-        for(int i = 0; i < NCons; i++)
-        {
-            ModelPart::ConditionsContainerType::iterator itCond = cond_begin + i;
-            Condition::GeometryType& rGeom = itCond->GetGeometry();
-
-            const unsigned int NumNodes = rGeom.PointsNumber();
-            double average_decomposition = 0.0;
-            double average_decomposition_threshold = 0.0;
-            for ( unsigned int node = 0; node < NumNodes; node++ )
-            {
-              average_decomposition += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION);
-              average_decomposition_threshold += rGeom[node].FastGetSolutionStepValue(DECOMPOSITION_THRESHOLD);
-            }
-            average_decomposition = average_decomposition/NumNodes;
-            average_decomposition_threshold = average_decomposition_threshold/NumNodes;
-            
-            if(average_decomposition > average_decomposition_threshold){
-              itCond->Set(ACTIVE, false);
-            }
-        }
-
-        KRATOS_CATCH("")
-	    }
-
-
-
     };
 
 } // namespace Kratos.

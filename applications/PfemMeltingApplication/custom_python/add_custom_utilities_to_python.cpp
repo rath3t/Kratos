@@ -1,7 +1,7 @@
-// KRATOS 
-// _____   __               __  __      _ _   _             
-//|  __ \ / _|             |  \/  |    | | | (_)            
-//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _ 
+// KRATOS
+// _____   __               __  __      _ _   _
+//|  __ \ / _|             |  \/  |    | | | (_)
+//| |__) | |_ ___ _ __ ___ | \  / | ___| | |_ _ _ __   __ _
 //|  ___/|  _/ _ \ '_ ` _ \| |\/| |/ _ \ | __| | '_ \ / _` |
 //| |    | ||  __/ | | | | | |  | |  __/ | |_| | | | | (_| |
 //|_|    |_| \___|_| |_| |_|_|  |_|\___|_|\__|_|_| |_|\__, |
@@ -68,7 +68,6 @@ namespace py = pybind11;
 
  py::class_<DecompositionUtility < 3 > >(m,"DecompositionUtility").def(py::init<>())
    .def("CalculateDecomposition", &DecompositionUtility < 3 > ::CalculateDecomposition)
-   .def("ElementDeactivation", &DecompositionUtility < 3 > ::ElementDeactivation)
    ;
 
  py::class_<PfemMeltingApplyBCProcess, PfemMeltingApplyBCProcess::Pointer, Process>(m, "PfemMeltingApplyBCProcess").def(py::init<ModelPart &>());
