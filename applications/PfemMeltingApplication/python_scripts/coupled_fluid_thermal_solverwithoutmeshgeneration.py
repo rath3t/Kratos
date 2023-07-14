@@ -87,8 +87,9 @@ class PfemCoupledFluidThermalSolver(BaseClass):
             self.modeler.GenerateModelPart(self.fluid_solver.main_model_part, self.thermal_solver.main_model_part,"EulerianConvDiffLumped3D","ThermalFace3D3N")
 
     def ReMesh(self):
-        for node in self.fluid_solver.main_model_part.Nodes:
-            node.SetSolutionStepValue(KratosMultiphysics.NODAL_H,0,self.mesh_element_size);
+
+        nodal_h_search = KratosMultiphysics.FindNodalHProcess(self.fluid_solver.main_model_part)
+        nodal_h_search.Execute()
 
         for node in (self.fluid_solver.main_model_part).Nodes:
             node.Set(KratosMultiphysics.TO_ERASE, False)
@@ -96,7 +97,7 @@ class PfemCoupledFluidThermalSolver(BaseClass):
         self.fluid_solver.main_model_part.Conditions.clear()
         self.fluid_solver.main_model_part.Elements.clear()
 
-        (self.Mesher).ReGenerateMesh("LagrangianFluidVMS3D","ThermalFace3D3N", self.fluid_solver.main_model_part, self.node_erase_process, True, False, 1.4, 0.1)  #1.8
+        (self.Mesher).ReGenerateMesh("LagrangianFluidVMS3D","ThermalFace3D3N", self.fluid_solver.main_model_part, self.node_erase_process, True, False, 1.8, 0.1)  #1.8
 
         #LagrangianFluidVMS3D
         kratos_comm  = KratosMultiphysics.DataCommunicator.GetDefault()
