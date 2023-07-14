@@ -50,8 +50,6 @@ class FemtolaserSolver(BaseClass):
             velocity = node.GetSolutionStepValue(KratosMultiphysics.VELOCITY)
             node.SetSolutionStepValue(KratosMultiphysics.MESH_VELOCITY, velocity)
 
-        self.DecompositionUtility.CalculateDecomposition(self.fluid_solver.main_model_part)
-
         thermal_is_converged = self.thermal_solver.SolveSolutionStep()
         # self.CalculateViscosityaux()
         t8=timer.time()

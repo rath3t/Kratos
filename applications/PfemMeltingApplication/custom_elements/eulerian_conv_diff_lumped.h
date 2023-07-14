@@ -132,7 +132,7 @@ public:
             {
                 // TODO. This needs to be reviewed...
                 // Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - Geom[i].FastGetSolutionStepValue(DECOMPOSITION));
-                Integrity[igauss] += Ncontainer(igauss,i)*(1.0 - 0.0);
+                Integrity[igauss] += Ncontainer(igauss,i);
             }
         }
         // TODO. Testing
@@ -226,30 +226,6 @@ public:
         // }
 
         KRATOS_CATCH("Error in Eulerian ConvDiff Lumped Element")
-    }
-
-    void CalculateOnIntegrationPoints( const Variable<double>& rVariable,std::vector<double>& rValues,
-                                                const ProcessInfo& rCurrentProcessInfo ) override
-    {
-        if(rVariable == DECOMPOSITION)
-        {
-            const GeometryType& Geom = this->GetGeometry();
-            const unsigned int NumGPoints = Geom.IntegrationPointsNumber( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-            const Matrix& NContainer = Geom.ShapeFunctionsValues( GeometryData::IntegrationMethod::GI_GAUSS_2 );
-
-            if ( rValues.size() != NumGPoints )
-                rValues.resize(NumGPoints);
-
-            for ( unsigned int igauss = 0; igauss < NumGPoints; igauss++ )
-            {
-                double gp_decomposition = 0.0;
-                for ( unsigned int i = 0; i < TNumNodes; i++ )
-                {
-                    gp_decomposition += NContainer(igauss,i)*Geom[i].FastGetSolutionStepValue(DECOMPOSITION);
-                }
-                rValues[igauss] = gp_decomposition;
-            }
-        }
     }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

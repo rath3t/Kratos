@@ -97,7 +97,6 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         #self.Pfem2Utils = PFEM2.Pfem2Utils()
         self.faceheatflux = PfemM.FaceHeatFlux()
         self.HeatSource = PfemM.HeatSource()
-        self.DecompositionUtility = PfemM.DecompositionUtility()
         self.outstring3 = "volume" + self.GetSuffix()
         self.outputfile4 = open(self.outstring3, 'w')
         self.outstring5 = "computational_times" + self.GetSuffix()
@@ -240,7 +239,6 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.HEAT_OF_VAPORIZATION)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.ARRHENIUS_VALUE)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.CARBONIZATION)
-        self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION)
 
 
         self.thermal_solver.AddVariables()

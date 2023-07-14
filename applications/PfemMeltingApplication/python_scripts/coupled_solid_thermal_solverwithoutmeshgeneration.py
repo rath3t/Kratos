@@ -236,7 +236,6 @@ class PfemCoupledFluidThermalSolver(PythonSolver):
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.HEAT_OF_VAPORIZATION)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.ARRHENIUS_VALUE)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.CARBONIZATION)
-        self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DECOMPOSITION)
 
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DELTA_SIGMA_XX)
         self.fluid_solver.main_model_part.AddNodalSolutionStepVariable(PfemM.DELTA_SIGMA_XY)
