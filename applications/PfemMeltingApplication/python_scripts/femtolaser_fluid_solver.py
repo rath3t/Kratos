@@ -27,17 +27,3 @@ class FemtolaserNavierStokesSolverMonolithic(FluidSolverCustomized):
 
         super(FemtolaserNavierStokesSolverMonolithic, self).Initialize()
 
-    def AdvanceInTime(self, current_time):
-
-        dt = self.settings["time_stepping"]["time_step"].GetDouble()
-        dt_reduction_coefficient = self.settings["time_stepping"]["time_step_reduction_coefficient"].GetDouble()
-
-        if self.laser.IsOn(current_time):
-            dt *= dt_reduction_coefficient
-
-        new_time = current_time + dt
-
-        self.main_model_part.CloneTimeStep(new_time)
-        self.main_model_part.ProcessInfo[KratosMultiphysics.STEP] += 1
-
-        return new_time

@@ -23,12 +23,12 @@ class PfemMeltingAnalysis(AnalysisStage):
         solver_settings = project_parameters["solver_settings"]
 
         self.laser = apply_laser_process.Laser(solver_settings["laser_import_settings"]["laser_filename"].GetString())
-         
+
         if not solver_settings.Has("domain_size"):
             KratosMultiphysics.Logger.PrintInfo("PfemMeltingAnalysis", "Using the old way to pass the domain_size, this will be removed!")
             solver_settings.AddEmptyValue("domain_size")
             solver_settings["domain_size"].SetInt(project_parameters["problem_data"]["domain_size"].GetInt())
-        
+
         super(PfemMeltingAnalysis, self).__init__(model, project_parameters)
 
         self._solver._SetLaser(self.laser)
@@ -36,17 +36,17 @@ class PfemMeltingAnalysis(AnalysisStage):
     #### Internal functions ####
     def _CreateSolver(self):
         """ Create the Solver (and create and import the ModelPart if it is not alread in the model) """
-        
+
         ## Solver construction
         return solver_wrapper.CreateSolverByParameters(self.model, self.project_parameters["solver_settings"],self.project_parameters["problem_data"]["parallel_type"].GetString())
-        
+
     def _GetSimulationName(self):
-          
+
         return "::[Convection-Diffusion Simulation]:: "
 
 if __name__ == "__main__":
     from sys import argv
-    pppppppppppppppppppppp
+
     if len(argv) > 2:
         err_msg =  'Too many input arguments!\n'
         err_msg += 'Use this script in the following way:\n'
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     with open(parameter_file_name,'r') as parameter_file:
         parameters = KratosMultiphysics.Parameters(parameter_file.read())
-    lllllllllllllllllllllllllllll
+
     model = KratosMultiphysics.Model()
     simulation = PfemMeltingAnalysis(model, parameters)
     simulation.Run()

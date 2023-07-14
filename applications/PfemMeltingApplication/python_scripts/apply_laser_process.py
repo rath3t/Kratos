@@ -70,7 +70,7 @@ class Laser:
             Q=self.new_table_Q.GetValue(time)
         else:
             Q=self.laser_path[self.laser_path.size()-1]["power"].GetDouble()
-        
+
         return Q
 
     def Position(self, time):
@@ -83,12 +83,8 @@ class Laser:
             x=self.laser_path[self.laser_path.size()-1]["x"].GetDouble()
             y=self.laser_path[self.laser_path.size()-1]["y"].GetDouble()
             z=self.laser_path[self.laser_path.size()-1]["z"].GetDouble()
-        
-        return x, y, z
-    
-    def IsOn(self, time):
 
-        return self.Power(time) > 0
+        return x, y, z
 
 class ApplyLaserProcess(KratosMultiphysics.Process):
 
