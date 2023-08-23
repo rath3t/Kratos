@@ -115,7 +115,7 @@ void FluidElement<TElementData>::CalculateLocalSystem(MatrixType& rLeftHandSideM
     noalias(rLeftHandSideMatrix) = ZeroMatrix(LocalSize, LocalSize);
     noalias(rRightHandSideVector) = ZeroVector(LocalSize);
 
-    if (TElementData::ElementManagesTimeIntegration) {
+    if constexpr (TElementData::ElementManagesTimeIntegration) {
         // Get Shape function data
         Vector gauss_weights;
         Matrix shape_functions;
@@ -150,7 +150,7 @@ void FluidElement<TElementData>::CalculateLeftHandSide(MatrixType& rLeftHandSide
 
     noalias(rLeftHandSideMatrix) = ZeroMatrix(LocalSize, LocalSize);
 
-    if (TElementData::ElementManagesTimeIntegration) {
+    if constexpr (TElementData::ElementManagesTimeIntegration) {
         // Get Shape function data
         Vector gauss_weights;
         Matrix shape_functions;
@@ -182,7 +182,7 @@ void FluidElement<TElementData>::CalculateRightHandSide(VectorType& rRightHandSi
 
     noalias(rRightHandSideVector) = ZeroVector(LocalSize);
 
-    if (TElementData::ElementManagesTimeIntegration) {
+    if constexpr (TElementData::ElementManagesTimeIntegration) {
         // Get Shape function data
         Vector gauss_weights;
         Matrix shape_functions;
@@ -389,7 +389,7 @@ int FluidElement<TElementData>::Check(const ProcessInfo &rCurrentProcessInfo) co
 
     for(unsigned int i=0; i<NumNodes; ++i)
     {
-        const Node<3>& rNode = r_geometry[i];
+        const Node& rNode = r_geometry[i];
         KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(ACCELERATION,rNode);
 
         // Check that required dofs exist

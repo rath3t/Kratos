@@ -78,7 +78,7 @@ void GeoTrussElementBase<TDim,TNumNodes>::
         rResult.resize(TDim*TNumNodes);
     }
 
-    if (TDim > 2) {
+    if constexpr (TDim > 2) {
         unsigned int index = 0;
         for (unsigned int i = 0; i < TNumNodes; ++i) {
             rResult[index++] = GetGeometry()[i].GetDof(DISPLACEMENT_X).EquationId();
@@ -105,7 +105,7 @@ void GeoTrussElementBase<TDim,TNumNodes>::
         rElementalDofList.resize(TDim*TNumNodes);
     }
 
-    if (TDim > 2) {
+    if constexpr (TDim > 2) {
         unsigned int index = 0;
         for (unsigned int i = 0; i < TNumNodes; ++i) {
             rElementalDofList[index++] = GetGeometry()[i].pGetDof(DISPLACEMENT_X);
@@ -594,7 +594,7 @@ int GeoTrussElementBase<TDim,TNumNodes>::
     }
 
     // Check that the element's nodes contain all required SolutionStepData and Degrees of freedom
-    if (TDim > 2) {
+    if constexpr (TDim > 2) {
         for (IndexType i = 0; i < number_of_nodes; ++i) {
             const NodeType& rnode = GetGeometry()[i];
             KRATOS_CHECK_VARIABLE_IN_NODAL_DATA(DISPLACEMENT, rnode);
@@ -721,7 +721,7 @@ template< >
 void GeoTrussElementBase<2,2>::
     WriteTransformationCoordinates(FullDofVectorType& rReferenceCoordinates)
 {
-    KRATOS_TRY;
+    KRATOS_TRY
 
     Vector current_displacement = ZeroVector(DIM*NUM_NODES);
     GetValuesVector(current_displacement, 0);
@@ -730,7 +730,7 @@ void GeoTrussElementBase<2,2>::
     rReferenceCoordinates[2] = GetGeometry()[1].X0() + current_displacement[2];
     rReferenceCoordinates[3] = GetGeometry()[1].Y0() + current_displacement[3];
 
-    KRATOS_CATCH("");
+    KRATOS_CATCH("")
 }
 
 //----------------------------------------------------------------------------------------
@@ -741,7 +741,7 @@ void GeoTrussElementBase<3,2>::
     KRATOS_TRY
 
     // 1st calculate transformation matrix
-    typedef BoundedVector<double, DIM> arraydim;
+    using arraydim = BoundedVector<double, DIM>;
     arraydim direction_vector_x = ZeroVector(DIM);
     arraydim direction_vector_y = ZeroVector(DIM);
     arraydim direction_vector_z = ZeroVector(DIM);
@@ -942,7 +942,7 @@ void GeoTrussElementBase<3,2>::
     CalculateGeometricStiffnessMatrix(FullDofMatrixType& rGeometricStiffnessMatrix,
                                       const ProcessInfo& rCurrentProcessInfo)
 {
-    KRATOS_TRY;
+    KRATOS_TRY
 
     double E = ReturnTangentModulus1D(rCurrentProcessInfo);
     const double A = GetProperties()[CROSS_AREA];
@@ -1042,7 +1042,7 @@ void GeoTrussElementBase<2,2>::
     CalculateGeometricStiffnessMatrix(FullDofMatrixType& rGeometricStiffnessMatrix,
                                       const ProcessInfo& rCurrentProcessInfo)
 {
-    KRATOS_TRY;
+    KRATOS_TRY
 
     double E = ReturnTangentModulus1D(rCurrentProcessInfo);
     const double A = GetProperties()[CROSS_AREA];
@@ -1108,7 +1108,7 @@ void GeoTrussElementBase<3,2>::
     CalculateElasticStiffnessMatrix(MatrixType& rElasticStiffnessMatrix,
                                     const ProcessInfo& rCurrentProcessInfo)
 {
-    KRATOS_TRY;
+    KRATOS_TRY
 
     double E = ReturnTangentModulus1D(rCurrentProcessInfo);
 
@@ -1298,7 +1298,7 @@ template< unsigned int TDim, unsigned int TNumNodes >
 double GeoTrussElementBase<TDim,TNumNodes>::
     ReturnTangentModulus1D(const ProcessInfo& rCurrentProcessInfo)
 {
-    KRATOS_TRY;
+    KRATOS_TRY
     double tangent_modulus(0.00);
 
     Vector strain_vector = ZeroVector(mpConstitutiveLaw->GetStrainSize());
@@ -1311,7 +1311,7 @@ double GeoTrussElementBase<TDim,TNumNodes>::
 
     return tangent_modulus;
 
-    KRATOS_CATCH("");
+    KRATOS_CATCH("")
 }
 
 //--------------------------------------------------------------------------------------------
