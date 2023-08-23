@@ -39,7 +39,7 @@ class KRATOS_API(GEO_MECHANICS_APPLICATION) UPwBaseElement : public Element
 public:
 
     /// The definition of the sizetype
-    typedef std::size_t SizeType;
+    using SizeType = std::size_t;
 
     KRATOS_CLASS_INTRUSIVE_POINTER_DEFINITION( UPwBaseElement );
 
@@ -117,6 +117,23 @@ public:
     void CalculateOnIntegrationPoints( const Variable<ConstitutiveLaw::Pointer>& rVariable,
                                       std::vector<ConstitutiveLaw::Pointer>& rValues,
                                       const ProcessInfo& rCurrentProcessInfo ) override;
+
+    void CalculateOnIntegrationPoints(const Variable<array_1d<double, 3>>& rVariable,
+        std::vector<array_1d<double, 3>>& rValues,
+        const ProcessInfo& rCurrentProcessInfo) override;
+
+    void CalculateOnIntegrationPoints(const Variable<Matrix>& rVariable,
+        std::vector<Matrix>& rValues,
+        const ProcessInfo& rCurrentProcessInfo) override;
+
+    void CalculateOnIntegrationPoints(const Variable<double>& rVariable,
+        std::vector<double>& rValues,
+        const ProcessInfo& rCurrentProcessInfo) override;
+
+    void CalculateOnIntegrationPoints(const Variable<Vector>& rVariable,
+        std::vector<Vector>& rValues,
+        const ProcessInfo& rCurrentProcessInfo) override;
+
 
     void SetValuesOnIntegrationPoints(const Variable<double>& rVariable,
                                       const std::vector<double>& rValues,

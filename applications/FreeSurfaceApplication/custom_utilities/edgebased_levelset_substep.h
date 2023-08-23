@@ -230,7 +230,7 @@ namespace Kratos
             // compute slip normals and fill SlipList
             CalculateNormals(mr_model_part.Conditions());
             mr_matrix_container.WriteVectorToDatabase(NORMAL, mSlipNormal, mr_model_part.Nodes());
-            if (TDim == 3)
+            if constexpr (TDim == 3)
                 DetectEdges3D(mr_model_part.Conditions());
 
             // determine number of edges and entries
@@ -299,7 +299,7 @@ namespace Kratos
                 KRATOS_ERROR_IF(it->Id() < 1) << "Element found with Id 0 or negative" << std::endl;
 
                 double elem_vol = 0.0;
-                if (TDim == 2)
+                if constexpr (TDim == 2)
                     elem_vol = it->GetGeometry().Area();
                 else
                     elem_vol = it->GetGeometry().Volume();
@@ -435,7 +435,7 @@ namespace Kratos
         {
             if (Cs != 0)
             {
-                if (TDim == 3)
+                if constexpr (TDim == 3)
                     ApplySmagorinsky3D(MolecularViscosity, Cs);
                 else
                     KRATOS_THROW_ERROR(std::logic_error, "smagorinsky not yet implemented in 2D", "");
@@ -1604,12 +1604,12 @@ namespace Kratos
             // calculate area normals face-by-face
             array_1d<double, 3> area_normal;
             // 2D case
-            if (TDim == 2)
+            if constexpr (TDim == 2)
             {
                 for (ModelPart::ConditionsContainerType::iterator cond_it = rConditions.begin(); cond_it != rConditions.end(); cond_it++)
                     CalculateNormal2D(cond_it, area_normal);
             } // 3D case
-            else if (TDim == 3)
+            else if constexpr (TDim == 3)
             {
                 // help vectors for cross product
                 array_1d<double, 3> v1;
@@ -1633,7 +1633,7 @@ namespace Kratos
             for (ModelPart::ConditionsContainerType::iterator cond_it = rConditions.begin(); cond_it != rConditions.end(); cond_it++)
             {
                 // get geometry data of the face
-                Geometry<Node<3>> &face_geometry = cond_it->GetGeometry();
+                Geometry<Node> &face_geometry = cond_it->GetGeometry();
                 // reference for area normal of the face
                 array_1d<double, 3> &face_normal = cond_it->GetValue(NORMAL);
                 // slip condition
@@ -1676,7 +1676,7 @@ namespace Kratos
             for (ModelPart::ConditionsContainerType::iterator cond_it = rConditions.begin(); cond_it != rConditions.end(); cond_it++)
             {
                 // get geometry data of the face
-                Geometry<Node<3>> &face_geometry = cond_it->GetGeometry();
+                Geometry<Node> &face_geometry = cond_it->GetGeometry();
                 // reference for area normal of the face
                 array_1d<double, 3> &face_normal = cond_it->GetValue(NORMAL);
                 bool is_inlet_or_outlet = false;
@@ -2245,7 +2245,7 @@ namespace Kratos
         // functions to calculate area normals for boundary conditions
         void CalculateNormal2D(ModelPart::ConditionsContainerType::iterator cond_it, array_1d<double, 3> &area_normal)
         {
-            Geometry<Node<3>> &face_geometry = (cond_it)->GetGeometry();
+            Geometry<Node> &face_geometry = (cond_it)->GetGeometry();
             area_normal[0] = face_geometry[1].Y() - face_geometry[0].Y();
             area_normal[1] = -(face_geometry[1].X() - face_geometry[0].X());
             area_normal[2] = 0.00;
@@ -2253,7 +2253,7 @@ namespace Kratos
         }
         void CalculateNormal3D(ModelPart::ConditionsContainerType::iterator cond_it, array_1d<double, 3> &area_normal, array_1d<double, 3> &v1, array_1d<double, 3> &v2)
         {
-            Geometry<Node<3>> &face_geometry = (cond_it)->GetGeometry();
+            Geometry<Node> &face_geometry = (cond_it)->GetGeometry();
 
             v1[0] = face_geometry[1].X() - face_geometry[0].X();
             v1[1] = face_geometry[1].Y() - face_geometry[0].Y();
@@ -2294,7 +2294,7 @@ namespace Kratos
                 KRATOS_ERROR_IF(aaa[i_node] == 0.0) << "found a 0 hmin on node " << i_node << std::endl;
             }
             // take unstructured meshes into account
-            if (TDim == 2)
+            if constexpr (TDim == 2)
             {
                 for (unsigned int i_node = 0; i_node < n_nodes; i_node++)
                 {
@@ -2303,7 +2303,7 @@ namespace Kratos
                     h_i = sqrt(2.0 * m_i);
                 }
             }
-            else if (TDim == 3)
+            else if constexpr (TDim == 3)
             {
                 for (unsigned int i_node = 0; i_node < n_nodes; i_node++)
                 {
@@ -2409,7 +2409,7 @@ namespace Kratos
             KRATOS_CATCH("")
         }
         //**************************************
-        void CornerDectectionHelper(Geometry<Node<3>> &face_geometry,
+        void CornerDectectionHelper(Geometry<Node> &face_geometry,
                                     const array_1d<double, 3> &face_normal,
                                     const double An,
                                     const GlobalPointersVector<Condition> &neighb,
@@ -2487,7 +2487,7 @@ namespace Kratos
             for (ModelPart::ConditionsContainerType::iterator cond_it = rConditions.begin(); cond_it != rConditions.end(); cond_it++)
             {
                 // get geometry data of the face
-                Geometry<Node<3>> &face_geometry = cond_it->GetGeometry();
+                Geometry<Node> &face_geometry = cond_it->GetGeometry();
                 // reference for area normal of the face
                 const array_1d<double, 3> &face_normal = cond_it->GetValue(NORMAL);
                 double An = norm_2(face_normal);
@@ -2669,12 +2669,12 @@ namespace Kratos
                 // symmetrize and multiply by 2
                 grad_vx[0] *= 2.0;
                 grad_vy[1] *= 2.0;
-                if (TDim > 2)
+                if constexpr (TDim > 2)
                     grad_vz[2] *= 2.0;
                 grad_vx[1] += grad_vy[0];
-                if (TDim > 2)
+                if constexpr (TDim > 2)
                     grad_vx[2] += grad_vz[0];
-                if (TDim > 2)
+                if constexpr (TDim > 2)
                     grad_vy[2] += grad_vz[1];
                 grad_vy[0] += grad_vx[1];
                 grad_vz[0] += grad_vx[2];
