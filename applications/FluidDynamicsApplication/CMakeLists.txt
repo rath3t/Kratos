@@ -147,6 +147,7 @@ endif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 # Add to the KratosMultiphisics Python module
 kratos_python_install(${INSTALL_PYTHON_USING_LINKS} ${CMAKE_CURRENT_SOURCE_DIR}/FluidDynamicsApplication.py KratosMultiphysics/FluidDynamicsApplication/__init__.py )
+kratos_python_install(${INSTALL_PYTHON_USING_LINKS} ${CMAKE_CURRENT_SOURCE_DIR}/python_registry_lists.py KratosMultiphysics/FluidDynamicsApplication/python_registry_lists.py )
 
 # Install python files
 get_filename_component (CURRENT_DIR_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
@@ -169,7 +170,7 @@ install(TARGETS KratosFluidDynamicsApplication DESTINATION libs )
 
 ## If trilinos is avaliable, switch on the Fluid trilinos extension
 if((${USE_MPI} MATCHES ON) AND (${TRILINOS_FOUND}))
-  message("Enabling trilinos extension for KratosFluidDynamicsApplication")
+  message(STATUS "Enabling trilinos extension for KratosFluidDynamicsApplication")
   add_subdirectory(trilinos_extension)
 endif((${USE_MPI} MATCHES ON) AND (${TRILINOS_FOUND}))
 
