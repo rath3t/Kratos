@@ -86,32 +86,82 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
     BaseType::Initialize(rCurrentProcessInfo);
 
     // Set the flag STATIC_CONDENSATION_LM if PARENT_ELEMENT is set and set the internal pointer (to avoid call the database)
+    DofsVectorType parent_element_dofs;
     if (this->Has(PARENT_ELEMENT)) {
         mOptions.Set(MeshTyingMortarCondition::STATIC_CONDENSATION_LM);
         mpParentSlaveElement = this->GetValue(PARENT_ELEMENT);
+
+        // Now we extract the slave dofs ordering from the element
+        DofsVectorType condition_dofs;
+        this->GetDofList(condition_dofs, rCurrentProcessInfo);
+        mpParentSlaveElement->GetDofList(parent_element_dofs, rCurrentProcessInfo);
+        IndexType index(0), parent_index(0);
+        for (auto& p_dof : condition_dofs) {
+            const IndexType node_id = p_dof->Id();
+            index = 0;
+            for (auto& p_parent_dof : parent_element_dofs) {
+                if (node_id == p_parent_dof->Id()) {
+                    mSlaveDofIndices[index] = parent_index;
+                }
+                ++parent_index;
+            }
+            ++index;
+        }
     }
 
     // We get the unkown variable
-    const std::string r_variable_name = GetProperties().Has(TYING_VARIABLE) ? GetProperties().GetValue(TYING_VARIABLE) : "DISPLACEMENT";
+    std::string variable_name = GetProperties().Has(TYING_VARIABLE) ? GetProperties().GetValue(TYING_VARIABLE) : mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM) ? "DISPLACEMENT" : "";
     mpDoFVariables.clear();
     mpLMVariables.clear();
-    if (KratosComponents<Variable<double>>::Has(r_variable_name)) {
-        mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(r_variable_name));
-        mpLMVariables.push_back(&SCALAR_LAGRANGE_MULTIPLIER);
-    } else if (KratosComponents<Variable<array_1d<double, 3>>>::Has(r_variable_name)) {
-        mpDoFVariables.reserve(TDim);
-        mpLMVariables.reserve(TDim);
-        mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(r_variable_name + "_X"));
-        mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
-        mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(r_variable_name + "_Y"));
-        mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
-        // In case of 3D, we add the Z variable
-        if constexpr (TDim == 3) {
-            mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(r_variable_name + "_Z"));
-            mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
+    // Variable name defined
+    if (variable_name != "") {
+        if (KratosComponents<Variable<double>>::Has(variable_name)) {
+            mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(variable_name));
+            mpLMVariables.push_back(&SCALAR_LAGRANGE_MULTIPLIER);
+        } else if (KratosComponents<Variable<array_1d<double, 3>>>::Has(variable_name)) {
+            mpDoFVariables.reserve(TDim);
+            mpLMVariables.reserve(TDim);
+            mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(variable_name + "_X"));
+            mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
+            mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(variable_name + "_Y"));
+            mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
+            // In case of 3D, we add the Z variable
+            if constexpr (TDim == 3) {
+                mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(variable_name + "_Z"));
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
+            }
+        } else {
+            KRATOS_ERROR << "Compatible variables are: double or array_1d<double, 3> " << std::endl;
+        }
+    } else if (mOptions.Is(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) { // Can be extracted from the element dofs
+        // Only consider first slave node (and just one variable) // TODO: To consider the master side as well and consider more variables
+        IndexType node_id = 0;
+        for (auto& p_dof : parent_element_dofs) {
+            if (mpDoFVariables.size() > 0 && node_id != p_dof->Id()) break;
+            node_id = p_dof->Id();
+            variable_name = (p_dof->GetVariable()).Name();
+            mpDoFVariables.push_back(&KratosComponents<Variable<double>>::Get(variable_name));
+        }
+        // Define LM in function of defined variables
+        SizeType number_of_dofs = mpDoFVariables.size();
+        switch (number_of_dofs) {
+            case 1:
+                mpLMVariables.push_back(&SCALAR_LAGRANGE_MULTIPLIER);
+                break;
+            case 2:
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
+                break;
+            case 3:
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
+                break;
+            default:
+                KRATOS_ERROR << "The number of dofs is not compatible with the variable name" << std::endl;
         }
     } else {
-        KRATOS_ERROR << "Compatible variables are: double or array_1d<double, 3> " << std::endl;
+        KRATOS_ERROR << "The variable name is not defined" << std::endl;
     }
 
     // We define the integration method

@@ -465,13 +465,13 @@ protected:
     std::vector<const Variable<double>*> mpDoFVariables;    /// The list of DoF variables
     std::vector<const Variable<double>*> mpLMVariables;     /// The list of LM variables
 
+    // TODO: Variables in each side may be different, think about it
+
     /* Static condensation slave element information */
     Element::Pointer mpParentSlaveElement = nullptr;        /// The pointer to the slave element (used in the static condensation)
     Vector mLocalSlaveRHSContribution;                      /// The local RHS contribution of the slave side dofs (used in the static condensation)
     Matrix mLocalSlaveElementContribution;                  /// The local contribution of the slave element (used in the static condensation)
-
-    // TODO: Replace the pointer for the data value container defining a variable (if it doesn't exist)
-    // TODO: Create a process to assign the slave element to the condition
+    std::array<IndexType, TNumNodes> mSlaveDofIndices;      /// The slave DoF indices in the slave parent element (used in the static condensation)
 
     Flags mOptions; /// Local flags
 
