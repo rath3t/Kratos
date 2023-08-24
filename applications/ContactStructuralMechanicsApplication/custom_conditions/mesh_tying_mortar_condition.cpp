@@ -85,17 +85,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
     // Initialize BaseType
     BaseType::Initialize(rCurrentProcessInfo);
 
-    // The slave geometry
-    GeometryType& r_slave_geometry = this->GetParentGeometry();
-    const array_1d<double, 3>& r_normal_slave = this->GetValue(NORMAL);
-
-    // The master geometry
-    GeometryType& r_master_geometry = this->GetPairedGeometry();
-    const array_1d<double, 3>& r_normal_master = this->GetPairedNormal();
-
-    // Set the flag STATIC_CONDENSATION_LM if PARENT_ELEMENT is set
-    if (r_slave_geometry.Has(PARENT_ELEMENT) && r_master_geometry.Has(PARENT_ELEMENT)) {
+    // Set the flag STATIC_CONDENSATION_LM if PARENT_ELEMENT is set and set the internal pointer (to avoid call the database)
+    if (this->Has(PARENT_ELEMENT)) {
         mOptions.Set(MeshTyingMortarCondition::STATIC_CONDENSATION_LM);
+        mpParentSlaveElement = this->GetValue(PARENT_ELEMENT);
     }
 
     // We get the unkown variable
@@ -125,11 +118,19 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
     const auto& r_properties = this->GetProperties();
     const IndexType integration_order = r_properties.Has(INTEGRATION_ORDER_CONTACT) ? r_properties.GetValue(INTEGRATION_ORDER_CONTACT) : 2;
 
+    // The slave geometry
+    GeometryType& r_slave_geometry = this->GetParentGeometry();
+    const array_1d<double, 3>& r_normal_slave = this->GetValue(NORMAL);
+
     // Create and initialize condition variables:
     GeneralVariables rVariables;
 
     // Create Ae matrix
     MatrixDualLM Ae;
+
+    // The master geometry
+    GeometryType& r_master_geometry = this->GetPairedGeometry();
+    const array_1d<double, 3>& r_normal_master = this->GetPairedNormal();
 
     // Initialize general variables for the current master element
     rVariables.Initialize();
@@ -658,8 +659,15 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         // TODO: Add the static condensation
         // Master side (KMM[aka 0, added in element]-P^T KSS P  0)
         BoundedMatrix<double, TNumNodes, TNumNodes> inverse_D_operator = ZeroMatrix(TNumNodes, TNumNodes);
+        double d_value = 0.0;
         for (IndexType i = 0; i < TNumNodes; ++i) {
-            inverse_D_operator(i, i) = 1.0/r_DOperator(i, i);
+            d_value = r_DOperator(i, i);
+            // Check if it is bigger than the epsilon C++ value
+            if (std::abs(d_value) > std::numeric_limits<double>::epsilon()) {
+                inverse_D_operator(i, i) = 1.0/r_DOperator(i, i);
+            } else {
+                KRATOS_WARNING("MeshTyingMortarCondition") << "Zero D Operator diagonal value in condition:" << this->Id() << std::endl;
+            }
         }
         // NOTE: No scale factor here as it is compensated in the multiplication/division of the inv_D and M operators
         const BoundedMatrix<double, TNumNodes, TNumNodesMaster> POperator = prod(inverse_D_operator, r_MOperator);

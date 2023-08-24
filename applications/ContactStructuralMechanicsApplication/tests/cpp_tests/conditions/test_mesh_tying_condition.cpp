@@ -287,8 +287,7 @@ void GenerateMeshTyingSimplestModelPart(
 
     // Set parent elements
     if (SetParentElement) {
-        p_cond_geom1->SetValue(PARENT_ELEMENT, p_elem_1);
-        p_cond_geom2->SetValue(PARENT_ELEMENT, p_elem_2);
+        p_cond_1->SetValue(PARENT_ELEMENT, p_elem_1);
     }
 
     // Set BC
@@ -389,10 +388,8 @@ void GenerateMeshTyingModelPart(
 
     // Set parent elements
     if (SetParentElement) {
-        p_cond_geom1->SetValue(PARENT_ELEMENT, p_elem_1);
-        p_cond_geom2->SetValue(PARENT_ELEMENT, p_elem_2);
-        p_cond_geom3->SetValue(PARENT_ELEMENT, p_elem_3);
-        p_cond_geom4->SetValue(PARENT_ELEMENT, p_elem_4);
+        p_cond_1->SetValue(PARENT_ELEMENT, p_elem_1);
+        p_cond_2->SetValue(PARENT_ELEMENT, p_elem_3);
     }
 
     // Set BC
