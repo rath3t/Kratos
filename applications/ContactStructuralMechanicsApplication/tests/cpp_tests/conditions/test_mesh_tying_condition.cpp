@@ -480,7 +480,7 @@ KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition3, KratosContactStructuralMechanicsF
 
     // Fill test model part
     //GenerateReferenceSimplestModelPart(r_model_part);
-    GenerateMeshTyingSimplestModelPart(r_model_part);
+    GenerateMeshTyingSimplestModelPart(r_model_part, true);
 
     // Solve system
     SolveSystem(r_model_part);
@@ -503,7 +503,7 @@ KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition4, KratosContactStructuralMechanicsF
 
     // Fill test model part
     // GenerateReferenceModelPart(r_model_part);
-    GenerateMeshTyingModelPart(r_model_part);
+    GenerateMeshTyingModelPart(r_model_part, true);
 
     // Solve system
     SolveSystem(r_model_part);
