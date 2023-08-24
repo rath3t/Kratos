@@ -85,6 +85,19 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
     // Initialize BaseType
     BaseType::Initialize(rCurrentProcessInfo);
 
+    // The slave geometry
+    GeometryType& r_slave_geometry = this->GetParentGeometry();
+    const array_1d<double, 3>& r_normal_slave = this->GetValue(NORMAL);
+
+    // The master geometry
+    GeometryType& r_master_geometry = this->GetPairedGeometry();
+    const array_1d<double, 3>& r_normal_master = this->GetPairedNormal();
+
+    // Set the flag STATIC_CONDENSATION_LM if PARENT_ELEMENT is set
+    if (r_slave_geometry.Has(PARENT_ELEMENT) && r_master_geometry.Has(PARENT_ELEMENT)) {
+        mOptions.Set(MeshTyingMortarCondition::STATIC_CONDENSATION_LM);
+    }
+
     // We get the unkown variable
     const std::string r_variable_name = GetProperties().Has(TYING_VARIABLE) ? GetProperties().GetValue(TYING_VARIABLE) : "DISPLACEMENT";
     mpDoFVariables.clear();
@@ -112,19 +125,11 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
     const auto& r_properties = this->GetProperties();
     const IndexType integration_order = r_properties.Has(INTEGRATION_ORDER_CONTACT) ? r_properties.GetValue(INTEGRATION_ORDER_CONTACT) : 2;
 
-    // The slave geometry
-    GeometryType& r_slave_geometry = this->GetParentGeometry();
-    const array_1d<double, 3>& r_normal_slave = this->GetValue(NORMAL);
-
     // Create and initialize condition variables:
     GeneralVariables rVariables;
 
     // Create Ae matrix
     MatrixDualLM Ae;
-
-    // The master geometry
-    GeometryType& r_master_geometry = this->GetPairedGeometry();
-    const array_1d<double, 3>& r_normal_master = this->GetPairedNormal();
 
     // Initialize general variables for the current master element
     rVariables.Initialize();
@@ -475,7 +480,7 @@ bool MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateAe(
     const IntegrationMethod ThisIntegrationMethod
     )
 {
-    // We initilize the Ae components
+    // We initialize the Ae components
     AeData rAeData;
     rAeData.Initialize();
 
@@ -619,6 +624,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
     IndexType initial_row_index = 0;
     IndexType initial_column_index = 0;
 
+    // NOTE: Remember to remove the condensed values in order to avoid value duplication
+
     // Resolution with LM
     if (mOptions.IsNot(MeshTyingMortarCondition::STATIC_CONDENSATION_LM)) {
         initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
@@ -634,7 +641,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
         
-        // Update intial index
+        // Update initial index
         initial_row_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on slave side
@@ -682,7 +689,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
         
-        // Update intial index
+        // Update initial index
         initial_column_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on slave side

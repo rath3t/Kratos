@@ -220,8 +220,12 @@ void CheckSolution(ModelPart& rModelPart)
 /**
  * @brief Generates a simplest mesh tying model part.
  * @param rModelPart the model part to generate the mesh tying model for
+ * @param SetParentElement flag to set the parent element
  */
-void GenerateMeshTyingSimplestModelPart(ModelPart& rModelPart)
+void GenerateMeshTyingSimplestModelPart(
+    ModelPart& rModelPart,
+    const bool SetParentElement = false
+    )
 {
     // Adding variable
     rModelPart.AddNodalSolutionStepVariable(NORMAL);
@@ -255,9 +259,11 @@ void GenerateMeshTyingSimplestModelPart(ModelPart& rModelPart)
 
     // Creating elements
     GeometryType::Pointer p_elem_geom1 = Kratos::make_shared<Triangle2D3<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode1, pnode2, pnode3})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 1, p_elem_geom1, p_prop));
+    Element::Pointer p_elem_1 = Kratos::make_intrusive<TestLaplacianElement>( 1, p_elem_geom1, p_prop);
+    rModelPart.AddElement(p_elem_1);
     GeometryType::Pointer p_elem_geom2 = Kratos::make_shared<Triangle2D3<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode5, pnode4, pnode6})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 2, p_elem_geom2, p_prop));
+    Element::Pointer p_elem_2 = Kratos::make_intrusive<TestLaplacianElement>( 2, p_elem_geom2, p_prop);
+    rModelPart.AddElement(p_elem_2);
 
     // Conditions geometries
     GeometryType::Pointer p_cond_geom1 = Kratos::make_shared<Line2D2<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode2, pnode3})});
@@ -279,6 +285,12 @@ void GenerateMeshTyingSimplestModelPart(ModelPart& rModelPart)
     p_cond_1->SetValue(NORMAL, slave_normal);
     rModelPart.AddCondition(p_cond_1);
 
+    // Set parent elements
+    if (SetParentElement) {
+        p_cond_geom1->SetValue(PARENT_ELEMENT, p_elem_1);
+        p_cond_geom2->SetValue(PARENT_ELEMENT, p_elem_2);
+    }
+
     // Set BC
     SetBC(rModelPart);
 }
@@ -286,8 +298,12 @@ void GenerateMeshTyingSimplestModelPart(ModelPart& rModelPart)
 /**
  * @brief Generates a mesh tying model part.
  * @param rModelPart the model part to generate the mesh tying model for
+ * @param SetParentElement set the parent element
  */
-void GenerateMeshTyingModelPart(ModelPart& rModelPart)
+void GenerateMeshTyingModelPart(
+    ModelPart& rModelPart,
+    const bool SetParentElement = false
+    )
 {
     // Adding variable
     rModelPart.AddNodalSolutionStepVariable(NORMAL);
@@ -327,14 +343,18 @@ void GenerateMeshTyingModelPart(ModelPart& rModelPart)
 
     // Creating elements
     GeometryType::Pointer p_elem_geom1 = Kratos::make_shared<Quadrilateral2D4<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode1, pnode2, pnode3, pnode4})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 1, p_elem_geom1, p_prop));
+    Element::Pointer p_elem_1 = Kratos::make_intrusive<TestLaplacianElement>( 1, p_elem_geom1, p_prop);
+    rModelPart.AddElement(p_elem_1);
     GeometryType::Pointer p_elem_geom2 = Kratos::make_shared<Quadrilateral2D4<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode4, pnode3, pnode5, pnode6})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 2, p_elem_geom2, p_prop));
+    Element::Pointer p_elem_2 = Kratos::make_intrusive<TestLaplacianElement>( 2, p_elem_geom2, p_prop);
+    rModelPart.AddElement(p_elem_2);
 
     GeometryType::Pointer p_elem_geom3 = Kratos::make_shared<Quadrilateral2D4<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode7, pnode8, pnode9, pnode10})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 3, p_elem_geom3, p_prop));
+    Element::Pointer p_elem_3 = Kratos::make_intrusive<TestLaplacianElement>( 3, p_elem_geom3, p_prop);
+    rModelPart.AddElement(p_elem_3);
     GeometryType::Pointer p_elem_geom4 = Kratos::make_shared<Quadrilateral2D4<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode10, pnode9, pnode11, pnode12})});
-    rModelPart.AddElement(Kratos::make_intrusive<TestLaplacianElement>( 4, p_elem_geom4, p_prop));
+    Element::Pointer p_elem_4 = Kratos::make_intrusive<TestLaplacianElement>( 4, p_elem_geom4, p_prop);
+    rModelPart.AddElement(p_elem_4);
 
     // Conditions geometries
     GeometryType::Pointer p_cond_geom1 = Kratos::make_shared<Line2D2<Node>>(PointerVector<Node>{std::vector<Node::Pointer>({pnode2, pnode3})});
@@ -366,6 +386,14 @@ void GenerateMeshTyingModelPart(ModelPart& rModelPart)
     Condition::Pointer p_cond_2 = r_prototype.Create(2, p_cond_geom2, p_prop, p_cond_geom4);
     p_cond_2->SetValue(NORMAL, slave_normal);
     rModelPart.AddCondition(p_cond_2);
+
+    // Set parent elements
+    if (SetParentElement) {
+        p_cond_geom1->SetValue(PARENT_ELEMENT, p_elem_1);
+        p_cond_geom2->SetValue(PARENT_ELEMENT, p_elem_2);
+        p_cond_geom3->SetValue(PARENT_ELEMENT, p_elem_3);
+        p_cond_geom4->SetValue(PARENT_ELEMENT, p_elem_4);
+    }
 
     // Set BC
     SetBC(rModelPart);
@@ -422,6 +450,52 @@ KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition1, KratosContactStructuralMechanicsF
 * Checks the correct work of the mesh tying condition
 */
 KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition2, KratosContactStructuralMechanicsFastSuite)
+{
+    // Create model part
+    Model this_model;
+    ModelPart& r_model_part = this_model.CreateModelPart("Main", 3);
+
+    // Fill test model part
+    // GenerateReferenceModelPart(r_model_part);
+    GenerateMeshTyingModelPart(r_model_part);
+
+    // Solve system
+    SolveSystem(r_model_part);
+
+    // // Check results
+    // IOMeshTyingDebug(r_model_part);
+
+    // Check solutions
+    CheckSolution(r_model_part);
+}
+
+/** 
+* Checks the correct work of the mesh tying condition (simplest case)
+*/
+KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition3, KratosContactStructuralMechanicsFastSuite2)
+{
+    // Create model part
+    Model this_model;
+    ModelPart& r_model_part = this_model.CreateModelPart("Main", 3);
+
+    // Fill test model part
+    //GenerateReferenceSimplestModelPart(r_model_part);
+    GenerateMeshTyingSimplestModelPart(r_model_part);
+
+    // Solve system
+    SolveSystem(r_model_part);
+
+    // // Check results
+    // IOMeshTyingDebug(r_model_part);
+
+    // Check solutions
+    CheckSolution(r_model_part);
+}
+
+/** 
+* Checks the correct work of the mesh tying condition
+*/
+KRATOS_TEST_CASE_IN_SUITE(MeshTyingCondition4, KratosContactStructuralMechanicsFastSuite2)
 {
     // Create model part
     Model this_model;
