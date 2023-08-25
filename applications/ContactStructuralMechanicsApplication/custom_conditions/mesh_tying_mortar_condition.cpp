@@ -761,14 +761,19 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         Matrix POperator_trans = ZeroMatrix(TNumNodesMaster * dof_size, TNumNodes * dof_size);
 
         // TODO: Extend POperator_per_dof and POperator_trans_per_dof
-        for (IndexType i = 0; i < dof_size; ++i) {
-            for (IndexType j = 0; j < TNumNodes; ++j) {
-                for (IndexType k = 0; k < TNumNodesMaster; ++k) {
+        for (IndexType j = 0; j < TNumNodes; ++j) {
+            for (IndexType k = 0; k < TNumNodesMaster; ++k) {
+                const double value = POperator_per_dof(j, k);
+                for (IndexType i = 0; i < dof_size; ++i) {
                     POperator; // TODO
                 }
             }
-            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
-                for (IndexType k = 0; k < TNumNodes; ++k) {
+        }
+
+        for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+            for (IndexType k = 0; k < TNumNodes; ++k) {
+                const double value = POperator_trans_per_dof(j, k);
+                for (IndexType i = 0; i < dof_size; ++i) {
                     POperator_trans; // TODO
                 }
             }
