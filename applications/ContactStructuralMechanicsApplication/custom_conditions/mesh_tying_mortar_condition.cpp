@@ -682,10 +682,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         initial_column_index = dof_size * (TNumNodes + TNumNodesMaster);
 
         // Iterate over the number of dofs on master side
-        for (IndexType i = 0; i < dof_size; ++i) {
-            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
-                for (IndexType k = 0; k < TNumNodes; ++k) {
-                    const double value = - scale_factor * r_MOperator(k, j);
+        for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+            for (IndexType k = 0; k < TNumNodes; ++k) {
+                const double value = - scale_factor * r_MOperator(k, j);    
+                for (IndexType i = 0; i < dof_size; ++i) {
                     rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = value;
                     rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = value;
                 }
@@ -696,10 +696,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         initial_row_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on slave side
-        for (IndexType i = 0; i < dof_size; ++i) {
-            for (IndexType j = 0; j < TNumNodes; ++j) {
-                for (IndexType k = 0; k < TNumNodes; ++k) {
-                    const double value = scale_factor * r_DOperator(k, j);
+        for (IndexType j = 0; j < TNumNodes; ++j) {
+            for (IndexType k = 0; k < TNumNodes; ++k) {
+                const double value = scale_factor * r_DOperator(k, j);   
+                for (IndexType i = 0; i < dof_size; ++i) {
                     rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = value;
                     rLocalLHS(initial_column_index + k * dof_size + i, initial_row_index + j * dof_size + i) = value;
                 }
@@ -785,10 +785,11 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         initial_row_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on master side
-        for (IndexType i = 0; i < dof_size; ++i) {
-            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
-                for (IndexType k = 0; k < TNumNodes; ++k) {
-                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = - scale_factor * r_MOperator(k, j);
+        for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+            for (IndexType k = 0; k < TNumNodes; ++k) {
+                const double value = r_MOperator(k, j);
+                for (IndexType i = 0; i < dof_size; ++i) {
+                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = - scale_factor * value;
                 }
             }
         }
@@ -799,10 +800,11 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         initial_column_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on slave side
-        for (IndexType i = 0; i < dof_size; ++i) {
-            for (IndexType j = 0; j < TNumNodes; ++j) {
-                for (IndexType k = 0; k < TNumNodes; ++k) {
-                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = scale_factor * r_DOperator(k, j);
+        for (IndexType j = 0; j < TNumNodes; ++j) {
+            for (IndexType k = 0; k < TNumNodes; ++k) {
+                const double value = r_DOperator(k, j);
+                for (IndexType i = 0; i < dof_size; ++i) {
+                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = scale_factor * value;
                 }
             }
         }
