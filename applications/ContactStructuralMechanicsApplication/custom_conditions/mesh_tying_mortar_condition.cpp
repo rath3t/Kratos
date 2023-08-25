@@ -158,7 +158,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
                 mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
                 break;
             default:
-                KRATOS_ERROR << "The number of dofs is not compatible with the variable name" << std::endl;
+                KRATOS_ERROR << "The number of dofs is not compatible with the variable size considered" << std::endl;
         }
     } else {
         KRATOS_ERROR << "The variable name is not defined" << std::endl;
@@ -728,6 +728,16 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             Matrix whole_slave_element_lhs;
             mpParentSlaveElement->CalculateLeftHandSide(whole_slave_element_lhs, rCurrentProcessInfo);
             mOptions.Set(MeshTyingMortarCondition::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED, true);
+
+            // First resize matrix
+            mLocalSlaveElementContribution.resize(TNumNodes * dof_size, TNumNodes * dof_size, false);
+            unsigned int index_node(0), i(0), j(0);
+            for (unsigned int i_node = 0; i_node < TNumNodes; ++i_node) {
+                index_node = mSlaveDofIndices[i_node];
+                for (unsigned int i_dof = 0; i_dof < dof_size; ++i_dof) {
+                    // TODO: Extract corresponding dofs
+                }
+            }
 
             // TODO: Extract corresponding dofs
             // mLocalSlaveElementContribution
