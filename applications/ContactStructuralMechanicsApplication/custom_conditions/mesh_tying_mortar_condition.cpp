@@ -706,7 +706,6 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
     } else { // Consider static condensation
-        // TODO: Add the static condensation
         // Master side (KMM[aka 0, added in element]-P^T KSS P  0)
         BoundedMatrix<double, TNumNodes, TNumNodes> inverse_D_operator = ZeroMatrix(TNumNodes, TNumNodes);
         double d_value = 0.0;
@@ -720,8 +719,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
         // NOTE: No scale factor here as it is compensated in the multiplication/division of the inv_D and M operators
-        const BoundedMatrix<double, TNumNodes, TNumNodesMaster> POperator = prod(inverse_D_operator, r_MOperator);
-        const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans = prod(trans(r_MOperator), inverse_D_operator);
+        const BoundedMatrix<double, TNumNodes, TNumNodesMaster> POperator_per_dof = prod(inverse_D_operator, r_MOperator);
+        const BoundedMatrix<double, TNumNodesMaster, TNumNodes> POperator_trans_per_dof = prod(trans(r_MOperator), inverse_D_operator);
 
         // Retrieve KSS
         if (mOptions.IsNot(MeshTyingMortarCondition::LOCAL_SLAVE_ELEMENT_CONTRIBUTION_INITIALIZED)) {
@@ -731,21 +730,58 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
 
             // First resize matrix
             mLocalSlaveElementContribution.resize(TNumNodes * dof_size, TNumNodes * dof_size, false);
-            unsigned int index_node(0), i(0), j(0);
+            
+            // Identify the indices of the dofs of interest
+            unsigned int index_node(0);
+            std::vector<IndexType> indices;
+            indices.reserve(TNumNodes * dof_size);
             for (unsigned int i_node = 0; i_node < TNumNodes; ++i_node) {
                 index_node = mSlaveDofIndices[i_node];
                 for (unsigned int i_dof = 0; i_dof < dof_size; ++i_dof) {
-                    // TODO: Extract corresponding dofs
+                    indices.push_back(index_node * dof_size + i_dof);
                 }
             }
 
-            // TODO: Extract corresponding dofs
-            // mLocalSlaveElementContribution
+            // Extract corresponding dofs
+            unsigned int i(0), j(0);
+            for (IndexType i_whole : indices) {
+                j = 0;
+                for (IndexType j_whole : indices) {
+                    mLocalSlaveElementContribution(i, j) = whole_slave_element_lhs(i_whole, j_whole);
+                    ++j;
+                }
+                ++i;
+            }
         }
 
-        // TODO
+        // Now actually calculate and add -P^T KSS P and add it to the system
 
-        // Slave side (- M D)
+        // First compute the whole P operators
+        Matrix POperator = ZeroMatrix(TNumNodes * dof_size, TNumNodesMaster * dof_size);
+        Matrix POperator_trans = ZeroMatrix(TNumNodesMaster * dof_size, TNumNodes * dof_size);
+
+        // TODO: Extend POperator_per_dof and POperator_trans_per_dof
+        for (IndexType i = 0; i < dof_size; ++i) {
+            for (IndexType j = 0; j < TNumNodes; ++j) {
+                for (IndexType k = 0; k < TNumNodesMaster; ++k) {
+                    POperator; // TODO
+                }
+            }
+            for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+                for (IndexType k = 0; k < TNumNodes; ++k) {
+                    POperator_trans; // TODO
+                }
+            }
+        }
+
+        // Calculate -P^T KSS P
+        Matrix temp_matrix = prod(mLocalSlaveElementContribution, POperator);
+        temp_matrix = - prod(POperator_trans, temp_matrix);
+
+        // Add -P^T KSS P
+        // TODO: Add it to the system
+
+        // Slave side (-M [aka -M-KSS, added in element, and must be removed as it is condensates in the system] D)
         initial_row_index = dof_size * TNumNodesMaster;
 
         // Iterate over the number of dofs on master side
@@ -756,6 +792,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
                 }
             }
         }
+
+        // TODO: Remove KSS!!
         
         // Update initial index
         initial_column_index = dof_size * TNumNodesMaster;
