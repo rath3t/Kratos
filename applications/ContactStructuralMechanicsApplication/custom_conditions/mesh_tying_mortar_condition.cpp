@@ -144,6 +144,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
         }
         // Define LM in function of defined variables
         SizeType number_of_dofs = mpDoFVariables.size();
+        mpLMVariables.reserve(number_of_dofs);
         switch (number_of_dofs) {
             case 1:
                 mpLMVariables.push_back(&SCALAR_LAGRANGE_MULTIPLIER);
@@ -156,6 +157,12 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::Initialize(const
                 mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
                 mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
                 mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
+                break;
+            case 4:
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_X);
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Y);
+                mpLMVariables.push_back(&VECTOR_LAGRANGE_MULTIPLIER_Z);
+                mpLMVariables.push_back(&SCALAR_LAGRANGE_MULTIPLIER);
                 break;
             default:
                 KRATOS_ERROR << "The number of dofs is not compatible with the variable size considered" << std::endl;
@@ -754,7 +761,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
 
-        // TODO: Ccheck indexes are correct
+        // TODO: Check indexes are correct
 
         // Now actually calculate and add -P^T KSS P and add it to the system
 
