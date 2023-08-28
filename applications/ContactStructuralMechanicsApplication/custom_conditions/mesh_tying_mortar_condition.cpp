@@ -760,12 +760,12 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         Matrix POperator = ZeroMatrix(TNumNodes * dof_size, TNumNodesMaster * dof_size);
         Matrix POperator_trans = ZeroMatrix(TNumNodesMaster * dof_size, TNumNodes * dof_size);
 
-        // TODO: Extend POperator_per_dof and POperator_trans_per_dof
+        // Extend POperator_per_dof and POperator_trans_per_dof
         for (IndexType j = 0; j < TNumNodes; ++j) {
             for (IndexType k = 0; k < TNumNodesMaster; ++k) {
                 const double value = POperator_per_dof(j, k);
                 for (IndexType i = 0; i < dof_size; ++i) {
-                    POperator; // TODO
+                    POperator(j * dof_size + i, k * dof_size + i) = value;
                 }
             }
         }
@@ -774,7 +774,7 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             for (IndexType k = 0; k < TNumNodes; ++k) {
                 const double value = POperator_trans_per_dof(j, k);
                 for (IndexType i = 0; i < dof_size; ++i) {
-                    POperator_trans; // TODO
+                    POperator_trans(j * dof_size + i, k * dof_size + i) = value;
                 }
             }
         }
