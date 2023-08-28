@@ -754,6 +754,8 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             }
         }
 
+        // TODO: Ccheck indexes are correct
+
         // Now actually calculate and add -P^T KSS P and add it to the system
 
         // First compute the whole P operators
@@ -784,7 +786,15 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
         temp_matrix = - prod(POperator_trans, temp_matrix);
 
         // Add -P^T KSS P
-        // TODO: Add it to the system
+        initial_row_index = 0;
+        initial_column_index = 0;
+        for (IndexType j = 0; j < TNumNodesMaster; ++j) {
+            for (IndexType k = 0; k < TNumNodesMaster; ++k) {
+                for (IndexType i = 0; i < dof_size; ++i) {
+                    rLocalLHS(initial_row_index + j * dof_size + i, initial_column_index + k * dof_size + i) = temp_matrix(j * dof_size + i, k * dof_size + i);
+                }
+            }
+        }
 
         // Slave side (-M [aka -M-KSS, added in element, and must be removed as it is condensates in the system] D)
         initial_row_index = dof_size * TNumNodesMaster;
@@ -794,12 +804,10 @@ void MeshTyingMortarCondition<TDim,TNumNodes, TNumNodesMaster>::CalculateLocalLH
             for (IndexType k = 0; k < TNumNodes; ++k) {
                 const double value = r_MOperator(k, j);
                 for (IndexType i = 0; i < dof_size; ++i) {
-                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = - scale_factor * value;
+                    rLocalLHS(initial_row_index + k * dof_size + i, initial_column_index + j * dof_size + i) = - scale_factor * value - mLocalSlaveElementContribution(k * dof_size + i, j * dof_size + i);
                 }
             }
         }
-
-        // TODO: Remove KSS!!
         
         // Update initial index
         initial_column_index = dof_size * TNumNodesMaster;
