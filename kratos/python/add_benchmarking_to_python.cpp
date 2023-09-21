@@ -27,7 +27,7 @@ namespace Kratos::Python
 // }
 
 void  AddBenchmarkingToPython(pybind11::module& m) {
-	namespace py = pybind11;
+    namespace py = pybind11;
 
 #if KRATOS_BUILD_BENCHMARKING
     // TODO
