@@ -118,12 +118,12 @@ class ParallelComputeCLVariablesUtility
             strain_vector[2] = rStrainList(elem_iterator, 2);
             cl_parameters.SetElementGeometry(rElement.GetGeometry());
 
-            cl_list[0].CalculateMaterialResponse(cl_parameters);
-            stress_list[elem_iterator, 0] = stress_vector[0];
-            stress_list[elem_iterator, 1] = stress_vector[1];
-            stress_list[elem_iterator, 2] = stress_vector[2];
+            cl_list[0]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
+            stress_list(elem_iterator, 0) = stress_vector[0];
+            stress_list(elem_iterator, 1) = stress_vector[1];
+            stress_list(elem_iterator, 2) = stress_vector[2];
 
-            cl_list[0].FinalizeMaterialResponse(cl_parameters);
+            cl_list[0]->FinalizeMaterialResponseCauchy(cl_parameters);
 
             elem_iterator++;
         });
