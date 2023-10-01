@@ -64,26 +64,6 @@ class ParallelComputeCLVariablesUtility
     Matrix ComputeStresses(ModelPart& rModelPart, const Matrix& rStrainList, const Flags& rOptions)
     {
 
-        // #here set the data needed (note that N and DN_DX are not really needed so we set them to dymmy values)
-        // N = KratosMultiphysics.Vector(3)
-        // DN_DX = KratosMultiphysics.Matrix(3,2)
-        // F = KratosMultiphysics.Matrix(np.eye(2)) #F is not needed for small deformation CLs
-        // detF = 1.0
-        // strain_vector = KratosMultiphysics.Vector(np.zeros(3))
-        // stress_vector = KratosMultiphysics.Vector(np.zeros(3))
-        // constitutive_matrix = KratosMultiphysics.Matrix(np.zeros((3,3)))
-
-        // cl_params = KratosMultiphysics.ConstitutiveLawParameters()
-        // cl_params.SetOptions(cl_options)
-        // cl_params.SetDeformationGradientF(F)
-        // cl_params.SetDeterminantF(detF)
-        // cl_params.SetStrainVector(strain_vector)
-        // cl_params.SetStressVector(stress_vector)
-        // cl_params.SetConstitutiveMatrix(constitutive_matrix)
-        // cl_params.SetShapeFunctionsValues(N)
-        // cl_params.SetShapeFunctionsDerivatives(DN_DX)
-        // cl_params.SetProcessInfo(mp.ProcessInfo)
-        // cl_params.SetMaterialProperties(prop)
         // i = 0
         // for elem in mp.Elements:            
         //     cl = self.cl_list[i]
@@ -111,6 +91,7 @@ class ParallelComputeCLVariablesUtility
         stress_vector.clear();
         Matrix C(3, 3);
         C.clear();
+        auto &r_process_info = rModelPart.GetProcessInfo();
 
         auto cl_parameters = ConstitutiveLaw::Parameters();
 
@@ -122,10 +103,32 @@ class ParallelComputeCLVariablesUtility
         cl_parameters.SetConstitutiveMatrix(C);
         cl_parameters.SetShapeFunctionsValues(N);
         cl_parameters.SetShapeFunctionsDerivatives(DN_DX);
-        cl_parameters.SetProcessInfo(rModelPart.GetProcessInfo());
+        cl_parameters.SetProcessInfo(r_process_info);
         cl_parameters.SetMaterialProperties(rModelPart.GetProperties(0));
 
-        return Matrix();
+        Matrix stress_list = rStrainList;
+        stress_list.clear();
+        int elem_iterator = 0;
+
+        block_for_each(rModelPart.Elements(), [&](Element& rElement) {
+            std::vector<ConstitutiveLaw::Pointer> cl_list;
+            rElement.CalculateOnIntegrationPoints(CONSTITUTIVE_LAW, cl_list, r_process_info);
+            strain_vector[0] = rStrainList(elem_iterator, 0);
+            strain_vector[1] = rStrainList(elem_iterator, 1);
+            strain_vector[2] = rStrainList(elem_iterator, 2);
+            cl_parameters.SetElementGeometry(rElement.GetGeometry());
+
+            cl_list[0].CalculateMaterialResponse(cl_parameters);
+            stress_list[elem_iterator, 0] = stress_vector[0];
+            stress_list[elem_iterator, 1] = stress_vector[1];
+            stress_list[elem_iterator, 2] = stress_vector[2];
+
+            cl_list[0].FinalizeMaterialResponse(cl_parameters);
+
+            elem_iterator++;
+        });
+
+        return stress_list;
     }
 
     ///@}
