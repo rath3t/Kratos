@@ -20,6 +20,7 @@
 #include "spaces/ublas_space.h"
 
 //Utilities
+#include "custom_utilities/parallel_compute_cl_variables_utility.h"
 
 
 namespace Kratos::Python {

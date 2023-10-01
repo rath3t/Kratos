@@ -6,9 +6,9 @@
 //  License:         BSD License
 //                   license: StructuralMechanicsApplication/license.txt
 //
-//  Main authors:    Manuel Messmer
+//  Main authors:    A. Cornejo
 //
-// This file is partly copied from "DEMApplication/custom_utilities/omp_dem_search.h" and modified
+//
 
 #pragma once
 
@@ -35,7 +35,7 @@ namespace Kratos {
  * @class ParallelComputeCLVariablesUtility
  * @ingroup StructuralMechanicsApplication
  * @brief Node Search
- * @details This class provides a method to search for neighbouring nodes of one node
+ * @details This class provides several methods to perform paralelized loops in c++ to compute stresses and store them in a matrix
  * within a given radius.
  * @author Manuel Messmer
  */
@@ -46,7 +46,7 @@ class ParallelComputeCLVariablesUtility
     ///@name Type Definitions
     ///@{
 
-      /// Pointer definition of ParallelComputeCLVariablesUtility
+    /// Pointer definition of ParallelComputeCLVariablesUtility
     KRATOS_CLASS_POINTER_DEFINITION(ParallelComputeCLVariablesUtility);
 
 
