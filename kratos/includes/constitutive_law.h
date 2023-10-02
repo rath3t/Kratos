@@ -13,15 +13,13 @@
 //                   Josep Maria Carbonell
 //
 
+#pragma once
 
-#if !defined(KRATOS_CONSTITUTIVE_LAW )
-#define  KRATOS_CONSTITUTIVE_LAW
+// System includes
 
-/* System includes */
+// External includes
 
-/* External includes */
-
-/* Project includes */
+// Project includes
 #include "includes/define.h"
 #include "includes/serializer.h"
 #include "includes/variables.h"
@@ -35,7 +33,6 @@
 #include "containers/data_value_container.h"
 #include "containers/flags.h"
 #include "includes/initial_state.h"
-
 
 namespace Kratos
 {
@@ -78,14 +75,14 @@ public:
      * Type definitions
      * NOTE: geometries are assumed to be of type Node for all problems
      */
-    typedef ProcessInfo ProcessInfoType;
-    typedef std::size_t SizeType;
-    typedef Geometry<Node > GeometryType;
+    using ProcessInfoType = ProcessInfo;
+    using SizeType = std::size_t;
+    using GeometryType = Geometry<Node>;
 
-    typedef Vector StrainVectorType;
-    typedef Vector StressVectorType;
-    typedef Matrix VoigtSizeMatrixType;           // Constitutive Matrix
-    typedef Matrix DeformationGradientMatrixType; // Def. gradient tensor
+    using StrainVectorType = Vector;
+    using StressVectorType = Vector;
+    using VoigtSizeMatrixType = Matrix;           // Constitutive Matrix
+    using DeformationGradientMatrixType = Matrix; // Def. gradient tensor
 
     /**
      * Counted pointer of ConstitutiveLaw
@@ -568,7 +565,7 @@ public:
         return *mpInitialState;
     }
 
-        /**
+    /**
      * @return The true if InitialState is defined
      */
     bool HasInitialState() const
@@ -610,6 +607,16 @@ public:
             const auto& r_initial_state = GetInitialState();
             rF = prod(r_initial_state.GetInitialDeformationGradientMatrix(), rF);
         }
+    }
+
+    /**
+    * @brief Check if the object has historical variables.
+    * @details This virtual function checks whether the object has historical variables. Historical variables are used to store data from previous time steps or iterations, for example plasticity laws.
+    * @return `true` if the object has historical variables, `false` otherwise.
+    */
+    virtual bool HasHistoricalVariables() const
+    {
+        return true;
     }
 
     /**
@@ -1074,8 +1081,6 @@ public:
      */
     void CalculateMaterialResponse (Parameters& rValues,const StressMeasure& rStressMeasure);
 
-
-
     /**
      * Computes the material response in terms of 1st Piola-Kirchhoff stresses and constitutive tensor
      * @see Parameters
@@ -1088,7 +1093,6 @@ public:
      * @see Parameters
      */
     virtual void CalculateMaterialResponsePK2 (Parameters& rValues);
-
 
     /**
      * Computes the material response in terms of Kirchhoff stresses and constitutive tensor
@@ -1167,7 +1171,6 @@ public:
      */
     void FinalizeMaterialResponse (Parameters& rValues,const StressMeasure& rStressMeasure);
 
-
     /**
      * Finalize the material response in terms of 1st Piola-Kirchhoff stresses
      * @see Parameters
@@ -1195,9 +1198,6 @@ public:
      */
 
     virtual void FinalizeMaterialResponseCauchy (Parameters& rValues);
-
-
-
 
     /**
      * This can be used in order to reset all internal variables of the
@@ -1377,6 +1377,7 @@ public:
     ///@}
     ///@name Inquiry
     ///@{
+
     ///@}
     ///@name Input and output
     ///@{
@@ -1401,25 +1402,27 @@ public:
       rOStream << "ConstitutiveLaw has no data";
     }
 
-
     ///@}
     ///@name Friends
     ///@{
+
     ///@}
-
 protected:
-
     ///@name Protected static Member Variables
     ///@{
+
     static const unsigned int msIndexVoigt3D6C [6][2];
     static const unsigned int msIndexVoigt2D4C [4][2];
     static const unsigned int msIndexVoigt2D3C [3][2];
+
     ///@}
     ///@name Protected member Variables
     ///@{
+
     ///@}
     ///@name Protected Operators
     ///@{
+
     ///@}
     ///@name Protected Operations
     ///@{
@@ -1486,40 +1489,32 @@ protected:
     ///@name Protected  Access
     ///@{
 
-
     ///@}
     ///@name Protected Inquiry
     ///@{
-
 
     ///@}
     ///@name Protected LifeCycle
     ///@{
 
-
     ///@}
-
-
 private:
-
     ///@name Static Member Variables
     ///@{
-
 
     ///@}
     ///@name Member Variables
     ///@{
+
     InitialState::Pointer mpInitialState = nullptr;
 
     ///@}
     ///@name Private Operators
     ///@{
 
-
     ///@}
     ///@name Private Operations
     ///@{
-
 
     ///@}
     ///@name Private  Access
@@ -1531,7 +1526,6 @@ private:
     ///@{
 
     friend class Serializer;
-
 
     void save(Serializer& rSerializer) const override
     {
@@ -1545,18 +1539,15 @@ private:
         rSerializer.load("InitialState",mpInitialState);
     }
 
-
     ///@}
     ///@name Private Inquiry
     ///@{
-
 
     ///@}
     ///@name Un accessible methods
     ///@{
 
     ///@}
-
 }; /* Class ConstitutiveLaw */
 
 ///@}
@@ -1603,6 +1594,4 @@ KRATOS_DEFINE_VARIABLE(ConstitutiveLaw::Pointer, CONSTITUTIVE_LAW)
 #undef  KRATOS_EXPORT_MACRO
 #define KRATOS_EXPORT_MACRO KRATOS_NO_EXPORT
 
-
 } /* namespace Kratos.*/
-#endif /* KRATOS_CONSTITUTIVE_LAW  defined */
