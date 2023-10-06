@@ -61,7 +61,7 @@ class ParallelComputeCLVariablesUtility
     /// Destructor.
     ~ParallelComputeCLVariablesUtility(){}
 
-    Matrix ComputeStresses(ModelPart& rModelPart, const Matrix& rStrainList, const Flags& rOptions)
+    Matrix ComputeStresses(ModelPart& rModelPart, const Matrix& rStrainList, std::vector<ConstitutiveLaw::Pointer>& rCLlist, const Flags& rOptions)
     {
 
         Vector N(3);
@@ -82,7 +82,9 @@ class ParallelComputeCLVariablesUtility
         Matrix stress_list = rStrainList;
         stress_list.clear();
 
-        block_for_each(rModelPart.Elements(), [&](Element& rElement) {
+        #pragma omp for
+        for (int i = 0; i < static_cast<int>(rCLlist.size()); ++i) {
+
             // We initialize the element-wise info
             Vector stress_vector(3);
             stress_vector.clear();
@@ -100,24 +102,57 @@ class ParallelComputeCLVariablesUtility
             cl_parameters.SetShapeFunctionsDerivatives(DN_DX);
             cl_parameters.SetProcessInfo(r_process_info);
             cl_parameters.SetMaterialProperties(rModelPart.GetProperties(0));
-            int elem_id = rElement.Id();
 
-            std::vector<ConstitutiveLaw::Pointer> cl_list;
-            rElement.CalculateOnIntegrationPoints(CONSTITUTIVE_LAW, cl_list, r_process_info);
-            strain_vector[0] = rStrainList(elem_id, 0);
-            strain_vector[1] = rStrainList(elem_id, 1);
-            strain_vector[2] = rStrainList(elem_id, 2);
-            cl_parameters.SetElementGeometry(rElement.GetGeometry());
+            strain_vector[0] = rStrainList(i, 0);
+            strain_vector[1] = rStrainList(i, 1);
+            strain_vector[2] = rStrainList(i, 2);
+            cl_parameters.SetElementGeometry(rModelPart.GetElement(i).GetGeometry()); // Here we assume that the ith CL corresponds to the ith element...
 
-            cl_list[0]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
+            rCLlist[i]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
 
-            stress_list(elem_id, 0) = stress_vector[0];
-            stress_list(elem_id, 1) = stress_vector[1];
-            stress_list(elem_id, 2) = stress_vector[2];
+            stress_list(i, 0) = stress_vector[0];
+            stress_list(i, 1) = stress_vector[1];
+            stress_list(i, 2) = stress_vector[2];
 
-            cl_list[0]->FinalizeMaterialResponseCauchy(cl_parameters);
+            rCLlist[i]->FinalizeMaterialResponseCauchy(cl_parameters);
+        }
 
-        });
+        // block_for_each(rModelPart.Elements(), [&](Element& rElement) {
+        //     // We initialize the element-wise info
+        //     Vector stress_vector(3);
+        //     stress_vector.clear();
+
+        //     Vector strain_vector(3);
+
+        //     auto cl_parameters = ConstitutiveLaw::Parameters();
+        //     cl_parameters.SetOptions(rOptions);
+        //     cl_parameters.SetDeformationGradientF(F);
+        //     cl_parameters.SetDeterminantF(detF);
+        //     cl_parameters.SetStrainVector(strain_vector);
+        //     cl_parameters.SetStressVector(stress_vector);
+        //     cl_parameters.SetConstitutiveMatrix(C);
+        //     cl_parameters.SetShapeFunctionsValues(N);
+        //     cl_parameters.SetShapeFunctionsDerivatives(DN_DX);
+        //     cl_parameters.SetProcessInfo(r_process_info);
+        //     cl_parameters.SetMaterialProperties(rModelPart.GetProperties(0));
+        //     int elem_id = rElement.Id();
+
+        //     std::vector<ConstitutiveLaw::Pointer> cl_list;
+        //     rElement.CalculateOnIntegrationPoints(CONSTITUTIVE_LAW, cl_list, r_process_info);
+        //     strain_vector[0] = rStrainList(elem_id, 0);
+        //     strain_vector[1] = rStrainList(elem_id, 1);
+        //     strain_vector[2] = rStrainList(elem_id, 2);
+        //     cl_parameters.SetElementGeometry(rElement.GetGeometry());
+
+        //     cl_list[0]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
+
+        //     stress_list(elem_id, 0) = stress_vector[0];
+        //     stress_list(elem_id, 1) = stress_vector[1];
+        //     stress_list(elem_id, 2) = stress_vector[2];
+
+        //     cl_list[0]->FinalizeMaterialResponseCauchy(cl_parameters);
+
+        // });
 
         return stress_list;
     }
