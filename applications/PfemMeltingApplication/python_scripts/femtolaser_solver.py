@@ -28,10 +28,41 @@ class FemtolaserSolver(BaseClass):
         self.laser_is_set = True
 
     def Initialize(self):
+
         if not self.laser_is_set:
             raise('Laser must be set before Initialize()')
 
         super(FemtolaserSolver, self).Initialize()
+
+        nodal_area_process = KratosMultiphysics.CalculateNodalAreaProcess(
+            self.fluid_solver.main_model_part,
+            self.domain_size)
+        nodal_area_process.Execute()
+
+        nodal_area = self.fluid_solver.main_model_part.Nodes[1214].GetSolutionStepValue(KratosMultiphysics.NODAL_AREA)
+        materials_filename = self.settings["thermal_solver_settings"]["material_import_settings"]["materials_filename"].GetString()
+
+        with open(materials_filename, 'r') as parameter_file:
+                materials = KratosMultiphysics.Parameters(parameter_file.read())
+
+        material_settings = materials["properties"][0]["Material"]
+
+        cp = material_settings['Variables']['SPECIFIC_HEAT'].GetDouble()
+        rho = material_settings['Variables']['DENSITY'].GetDouble()
+        Q = 25e-6
+        T0 = self.settings['environment_settings']['ambient_temperature'].GetDouble()
+        energy_to_temperature = 1.0 / (nodal_area * cp * rho)
+        laser_settings_file_name = self.settings['laser_import_settings']['laser_filename'].GetString()
+        with open(laser_settings_file_name, 'r') as parameter_file:
+            laser_settings = KratosMultiphysics.Parameters(parameter_file.read())
+
+        for node in self.fluid_solver.main_model_part.Nodes:
+            if node.Id==1214:
+                initial_temp = T0 + energy_to_temperature * Q
+                node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, initial_temp)
+                node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, initial_temp)
+
+
 
     def SolveSolutionStep(self):
 
@@ -51,7 +82,7 @@ class FemtolaserSolver(BaseClass):
             node.SetSolutionStepValue(KratosMultiphysics.MESH_VELOCITY, velocity)
 
         self.DecompositionUtility.CalculateDecomposition(self.fluid_solver.main_model_part)
-        self.DecompositionUtility.ElementDeactivation(self.fluid_solver.main_model_part)
+        #self.DecompositionUtility.ElementDeactivation(self.fluid_solver.main_model_part)
 
         thermal_is_converged = self.thermal_solver.SolveSolutionStep()
         # self.CalculateViscosityaux()
