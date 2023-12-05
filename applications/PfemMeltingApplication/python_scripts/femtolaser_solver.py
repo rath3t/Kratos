@@ -37,13 +37,14 @@ class FemtolaserSolver(BaseClass):
         return center_Id
 
     def MonitorEnergy(self):
+
         energy = 0.0
-        T0 = self.settings['environment_settings']['ambient_temperature'].GetDouble()
 
         for node in self.fluid_solver.main_model_part.Nodes:
             nodal_measure = node.GetSolutionStepValue(KratosMultiphysics.NODAL_AREA)
-            energy += (node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE) - T0) * nodal_measure
+            energy += (node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE) - self.T0) * nodal_measure * self.cp * self.rho
 
+        print('MonitorEnergy:', energy)
         return energy
 
     def CreateResultsFile(self, filename):
@@ -103,24 +104,27 @@ class FemtolaserSolver(BaseClass):
         f.close()
 
     def ImposeTemperatureDueToLaser(self):
-        def bell_curve(radius_squared, R_far, Tmax):
-            # Calculate the z-score of the radius.
-            z = radius_squared / R_far**2
 
-            # Calculate the value of the bell curve at the z-score.
-            bell_curve_value = Tmax * np.exp(-0.5 * z)
+        # Compute Q such that C_L is 100
+        # kappa = self.conductivity / (self.rho * self.cp)
+        self.C_L = 100.0
+        self.kappa = self.R_far * self.R_far / 4.0
+        self.Q = self.C_L * 8.0 * self.cp * np.pi**1.5 * self.kappa**1.5 * self.rho
+
+        def bell_curve(radius_squared):
+            initial_t = 1.0
+            z = -radius_squared / (4.0 * self.kappa * initial_t)
+            bell_curve_value = (self.C_L / initial_t**1.5) * np.exp(z)
 
             return bell_curve_value
 
-        T0 = self.settings['environment_settings']['ambient_temperature'].GetDouble()
+        for node in self.fluid_solver.main_model_part.Nodes:
+            r_2 = node.X**2 + node.Y**2 + node.Z**2
+            temp = self.T0 + bell_curve(r_2)
+            node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, temp)
+            node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, temp)
 
-        # for node in self.fluid_solver.main_model_part.Nodes:
-        #     r_2 = node.X**2 + node.Y**2 + node.Z**2
-        #     if r_2 < R_far**2:
-        #         temp = T0 + bell_curve(r_2, R_far, 0.5 * T0)
-        #         node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, temp)
-        #         node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, temp)
-        center_Id = self.FindCenterNodeId()
+        '''center_Id = self.FindCenterNodeId()
         center_node_nodal_area = self.fluid_solver.main_model_part.Nodes[center_Id].GetSolutionStepValue(KratosMultiphysics.NODAL_AREA)
 
         energy_to_temperature_change = 1.0 / (center_node_nodal_area * self.cp * self.rho)
@@ -128,7 +132,7 @@ class FemtolaserSolver(BaseClass):
             if node.Id == center_Id:
                 initial_temp = self.T0 + energy_to_temperature_change * self.Q
                 node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, initial_temp)
-                node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, initial_temp)
+                node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, initial_temp)'''
 
     def Initialize(self):
 
@@ -149,8 +153,8 @@ class FemtolaserSolver(BaseClass):
 
         material_settings = materials["properties"][0]["Material"]
 
-        self.Q = 25e-6
-        self.R_far = 0.04
+        self.Q = 5e-10 #25e-6
+        self.R_far = 0.033 #0.04
         self.cp = material_settings['Variables']['SPECIFIC_HEAT'].GetDouble()
         self.conductivity = material_settings['Variables']['CONDUCTIVITY'].GetDouble()
         self.rho = material_settings['Variables']['DENSITY'].GetDouble()
@@ -161,8 +165,10 @@ class FemtolaserSolver(BaseClass):
             laser_settings = KratosMultiphysics.Parameters(parameter_file.read())
 
         self.ImposeTemperatureDueToLaser()
+        print('initial energy: ', self.Q)
 
         self.initial_energy = self.MonitorEnergy()
+        print("initial energy calculated: ", self.initial_energy)
 
         radius_2 = lambda node: node.X**2 + node.Y**2 + node.Z**2
 
