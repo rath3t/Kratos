@@ -107,14 +107,17 @@ class FemtolaserSolver(BaseClass):
 
         # Compute Q such that C_L is 100
         # kappa = self.conductivity / (self.rho * self.cp)
-        self.C_L = 100.0
-        self.kappa = self.R_far * self.R_far / 4.0
-        self.Q = self.C_L * 8.0 * self.cp * np.pi**1.5 * self.kappa**1.5 * self.rho
+        self.C_L = 0.0001
+        t_ini = 0.00005
+        self.kappa = self.R_far * self.R_far / (4.0 * t_ini)
+        self.Q = 0.5 * self.C_L * 8.0 * self.cp * np.pi**1.5 * self.kappa**1.5 * self.rho
+        print("kappa:", self.kappa)
+        print("Q:", self.Q)
 
         def bell_curve(radius_squared):
-            initial_t = 1.0
-            z = -radius_squared / (4.0 * self.kappa * initial_t)
-            bell_curve_value = (self.C_L / initial_t**1.5) * np.exp(z)
+            t_ini = 0.00005
+            z = -radius_squared / (4.0 * self.kappa * t_ini)
+            bell_curve_value = (self.C_L / t_ini**1.5) * np.exp(z)
 
             return bell_curve_value
 
@@ -159,16 +162,20 @@ class FemtolaserSolver(BaseClass):
         self.conductivity = material_settings['Variables']['CONDUCTIVITY'].GetDouble()
         self.rho = material_settings['Variables']['DENSITY'].GetDouble()
         self.T0 = self.settings['environment_settings']['ambient_temperature'].GetDouble()
+        print("cp:", self.cp)
+        print("conductivity:", self.conductivity)
+        print("rho:", self.rho)
+        print("T0:", self.T0)
 
         laser_settings_file_name = self.settings['laser_import_settings']['laser_filename'].GetString()
         with open(laser_settings_file_name, 'r') as parameter_file:
             laser_settings = KratosMultiphysics.Parameters(parameter_file.read())
 
         self.ImposeTemperatureDueToLaser()
-        print('initial energy: ', self.Q)
+        print('Initial energy: ', self.Q)
 
         self.initial_energy = self.MonitorEnergy()
-        print("initial energy calculated: ", self.initial_energy)
+        print("Initial computed energy: ", self.initial_energy)
 
         radius_2 = lambda node: node.X**2 + node.Y**2 + node.Z**2
 
