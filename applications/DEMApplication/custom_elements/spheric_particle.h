@@ -8,7 +8,6 @@
 // System includes
 #include <string>
 #include <iostream>
-#include <map>
 
 // Project includes
 #include "includes/define.h"
@@ -96,7 +95,6 @@ bool mDomainIsPeriodic;
 double mDistance;
 double mRadiusSum;
 double mDt;
-double mTime;
 double mOtherRadius;
 double mIndentation;
 double mMyCoors[3];
@@ -443,9 +441,6 @@ std::unique_ptr<DEMDiscontinuumConstitutiveLaw> mDiscontinuumConstitutiveLaw;
 std::unique_ptr<DEMRollingFrictionModel> mRollingFrictionModel;
 
 double mInitializationTime;
-double mIndentationInitialOption;
-//std::vector<double> mIndentationInitial;
-std::map<int, double> mIndentationInitial;
 double mProgrammedDestructionTime=-1.0; // set to a negative value, so that when marked TO_ERASE, elimination is by default.
 double mRadius;
 double mSearchRadius;
