@@ -194,7 +194,7 @@ public:
         noalias(rRightHandSideVector) += (Variables.dt_inv*Variables.density*Variables.specific_heat - (1.0-Variables.theta)*Variables.beta*Variables.div_v)*prod(aux1,Variables.phi_old);
 
         //adding the diffusion
-        const double effective_conductivity = integrity_quadrature * Variables.conductivity;
+        const double effective_conductivity = Variables.conductivity;
         noalias(rLeftHandSideMatrix)  += (effective_conductivity * Variables.theta * prod(DN_DX, trans(DN_DX)))*static_cast<double>(TNumNodes);
         noalias(rRightHandSideVector) -= prod((effective_conductivity * (1.0-Variables.theta) * prod(DN_DX, trans(DN_DX))),Variables.phi_old)*static_cast<double>(TNumNodes) ;
 
