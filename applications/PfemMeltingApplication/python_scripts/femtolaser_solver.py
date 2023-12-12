@@ -105,25 +105,30 @@ class FemtolaserSolver(BaseClass):
 
     def ImposeTemperatureDueToLaser(self):
 
-        # Compute Q such that C_L is 100
-        # kappa = self.conductivity / (self.rho * self.cp)
-        self.C_L = 0.0001
-        t_ini = 0.00005
-        self.kappa = self.R_far * self.R_far / (4.0 * t_ini)
+        # Compute Q given C_L
+        self.C_L = 1e8 #100.0
+        t_ini = 1.0
+        self.kappa = self.R_far ** 2 / (4.0 * t_ini)
+
+        # Conductivity should be then:
+        self.conductivity = self.rho * self.cp * self.kappa
+        print("conductivity:", self.conductivity)
+
         self.Q = 0.5 * self.C_L * 8.0 * self.cp * np.pi**1.5 * self.kappa**1.5 * self.rho
         print("kappa:", self.kappa)
         print("Q:", self.Q)
 
-        def bell_curve(radius_squared):
-            t_ini = 0.00005
-            z = -radius_squared / (4.0 * self.kappa * t_ini)
-            bell_curve_value = (self.C_L / t_ini**1.5) * np.exp(z)
+        def bell_curve(t, radius_squared):
+            z = -radius_squared / (4.0 * self.kappa * t)
+
+            bell_curve_value = self.C_L / t**1.5 * np.exp(z)
 
             return bell_curve_value
 
         for node in self.fluid_solver.main_model_part.Nodes:
+            t_ini = 1.0
             r_2 = node.X**2 + node.Y**2 + node.Z**2
-            temp = self.T0 + bell_curve(r_2)
+            temp = self.T0 + bell_curve(t_ini, r_2)
             node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, temp)
             node.SetSolutionStepValue(KratosMultiphysics.TEMPERATURE, 1, temp)
 
@@ -183,6 +188,8 @@ class FemtolaserSolver(BaseClass):
         self.radii = np.sqrt(np.array([radius_2(node) for node in self.near_field_nodes]))
         self.results_filename = 'results.h5'
         self.CreateResultsFile(self.results_filename)
+        self.temperature_increments = np.array([node.GetSolutionStepValue(KratosMultiphysics.TEMPERATURE) - self.T0 for node in self.near_field_nodes])
+        self.WriteResults(self.results_filename, self.fluid_solver.main_model_part.ProcessInfo)
 
     def SolveSolutionStep(self):
         # Checking whether the energy is conserved
