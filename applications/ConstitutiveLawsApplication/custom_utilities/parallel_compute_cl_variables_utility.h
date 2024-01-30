@@ -106,7 +106,7 @@ class ParallelComputeCLVariablesUtility
             cl_parameters.SetProcessInfo(r_process_info);
             cl_parameters.SetMaterialProperties(rModelPart.GetProperties(0));
 
-            cl_parameters.SetElementGeometry(rModelPart.GetElement(i).GetGeometry()); // Here we assume that the ith CL corresponds to the ith element...
+            cl_parameters.SetElementGeometry(rModelPart.GetElement(i + 1).GetGeometry()); // Here we assume that the ith CL corresponds to the ith element...
 
             rCLlist[i]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
 
