@@ -85,11 +85,14 @@ class ParallelComputeCLVariablesUtility
         #pragma omp for
         for (int i = 0; i < static_cast<int>(rCLlist.size()); ++i) {
 
-            // We initialize the element-wise info
+            // We initialize the CL-wise info
             Vector stress_vector(3);
             stress_vector.clear();
 
             Vector strain_vector(3);
+            strain_vector[0] = rStrainList(i, 0);
+            strain_vector[1] = rStrainList(i, 1);
+            strain_vector[2] = rStrainList(i, 2);
 
             auto cl_parameters = ConstitutiveLaw::Parameters();
             cl_parameters.SetOptions(rOptions);
@@ -103,9 +106,6 @@ class ParallelComputeCLVariablesUtility
             cl_parameters.SetProcessInfo(r_process_info);
             cl_parameters.SetMaterialProperties(rModelPart.GetProperties(0));
 
-            strain_vector[0] = rStrainList(i, 0);
-            strain_vector[1] = rStrainList(i, 1);
-            strain_vector[2] = rStrainList(i, 2);
             cl_parameters.SetElementGeometry(rModelPart.GetElement(i).GetGeometry()); // Here we assume that the ith CL corresponds to the ith element...
 
             rCLlist[i]->CalculateMaterialResponseCauchy(cl_parameters); // Here I assume one IP
