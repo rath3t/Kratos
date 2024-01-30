@@ -5,7 +5,7 @@
 #   - https://github.com/KratosMultiphysics/Kratos
 
 # Optional parameters:
-# You can find a list will all the compiation options in INSTALL.md or here:
+# You can find a list with all the compilation options in INSTALL.md or here:
 #   - https://github.com/KratosMultiphysics/Kratos/wiki/Compilation-options
 
 add_app () {
@@ -25,6 +25,7 @@ add_app ${KRATOS_APP_DIR}/LinearSolversApplication;
 add_app ${KRATOS_APP_DIR}/StructuralMechanicsApplication;
 add_app ${KRATOS_APP_DIR}/FluidDynamicsApplication;
 add_app ${KRATOS_APP_DIR}/FluidDynamicsBiomedicalApplication;
+add_app ${KRATOS_APP_DIR}/FluidDynamicsHydraulicsApplication;
 add_app ${KRATOS_APP_DIR}/MeshMovingApplication;
 add_app ${KRATOS_APP_DIR}/DEMApplication;
 add_app ${KRATOS_APP_DIR}/CSharpWrapperApplication;
@@ -43,13 +44,16 @@ add_app ${KRATOS_APP_DIR}/ContactStructuralMechanicsApplication;
 add_app ${KRATOS_APP_DIR}/IgaApplication;
 add_app ${KRATOS_APP_DIR}/ParticleMechanicsApplication;
 add_app ${KRATOS_APP_DIR}/ChimeraApplication;
-add_app ${KRATOS_APP_DIR}/MultilevelMonteCarloApplication;
 add_app ${KRATOS_APP_DIR}/StatisticsApplication;
 add_app ${KRATOS_APP_DIR}/SwimmingDEMApplication;
 add_app ${KRATOS_APP_DIR}/ConstitutiveLawsApplication;
 add_app ${KRATOS_APP_DIR}/RomApplication;
 add_app ${KRATOS_APP_DIR}/ShallowWaterApplication;
 add_app ${KRATOS_APP_DIR}/GeoMechanicsApplication;
+add_app ${KRATOS_APP_DIR}/DamApplication;
+add_app ${KRATOS_APP_DIR}/PoromechanicsApplication;
+add_app ${KRATOS_APP_DIR}/OptimizationApplication;
+add_app ${KRATOS_APP_DIR}/MedApplication;
 
 # Clean
 clear
@@ -71,5 +75,5 @@ ${KRATOS_CMAKE_OPTIONS_FLAGS} \
 -DCMAKE_UNITY_BUILD=ON \
 -DINCLUDE_MMG=ON                                    \
 
-# Buid
+# Build
 cmake --build "${KRATOS_BUILD}/${KRATOS_BUILD_TYPE}" --target install -- -j2

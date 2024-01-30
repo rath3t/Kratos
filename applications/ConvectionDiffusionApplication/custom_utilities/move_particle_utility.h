@@ -124,10 +124,10 @@ namespace Kratos
 					array_1d<double,3> position_node;
 					double distance=0.0;
 					position_node = pnode->Coordinates();
-					GlobalPointersVector< Node<3> >& rneigh = pnode->GetValue(NEIGHBOUR_NODES);
+					GlobalPointersVector< Node >& rneigh = pnode->GetValue(NEIGHBOUR_NODES);
 					//we loop all the nodes to check all the edges
 					const double number_of_neighbours = double(rneigh.size());
-					for( GlobalPointersVector<Node<3> >::iterator inode = rneigh.begin(); inode!=rneigh.end(); inode++)
+					for( GlobalPointersVector<Node >::iterator inode = rneigh.begin(); inode!=rneigh.end(); inode++)
 					{
 						array_1d<double,3> position_difference;
 						position_difference = inode->Coordinates() - position_node;
@@ -229,7 +229,7 @@ namespace Kratos
 				int & number_of_particles = mnumber_of_particles_in_elems[ii];
 				number_of_particles=0;
 
-				Geometry< Node<3> >& geom = ielem->GetGeometry();
+				Geometry< Node >& geom = ielem->GetGeometry();
 				//unsigned int elem_id = ielem->Id();
 				//mareas_vector[i_int]=CalculateArea(geom); UNUSED SO COMMENTED
 				ComputeGaussPointPositions_initial(geom, pos, N); //we also have the standard (4), and 45
@@ -332,7 +332,7 @@ namespace Kratos
 				for(unsigned int ii=element_partition[kkk]; ii<element_partition[kkk+1]; ii++)
 				{
 					ModelPart::ElementsContainerType::iterator ielem = ielembegin+ii;
-					Geometry<Node<3> >& geom = ielem->GetGeometry();
+					Geometry<Node >& geom = ielem->GetGeometry();
 
 					array_1d<double, 3 >vector_mean_velocity=ZeroVector(3);
 
@@ -651,7 +651,7 @@ namespace Kratos
 					array_1d<double,(TDim+1)> nodes_addedweights = ZeroVector((TDim+1));
 					//array_1d<double,(TDim+1)> weighting_inverse_divisor;
 
-					Geometry<Node<3> >& geom = ielem->GetGeometry();
+					Geometry<Node >& geom = ielem->GetGeometry();
 
 					for (int i=0 ; i!=(TDim+1) ; ++i)
 					{
@@ -824,7 +824,7 @@ namespace Kratos
 					//mass_matrix_d = ZeroMatrix(TDim+1 , TDim+1 );  //resetting matrices
 					rhs_scalar1 = ZeroVector((TDim+1));         //resetting vectors
 
-					Geometry<Node<3> >& geom = ielem->GetGeometry();
+					Geometry<Node >& geom = ielem->GetGeometry();
 					const double elem_volume = geom.Area();
 
 					for (int i=0 ; i!=(TDim+1) ; ++i)  //saving the nodal positions for faster access
@@ -970,7 +970,7 @@ namespace Kratos
 					//const int & elem_id = ielem->Id();
 					ModelPart::ElementsContainerType::iterator ielem = ielembegin+ii;
 					Element::Pointer pelement(*ielem.base());
-					Geometry<Node<3> >& geom = ielem->GetGeometry();
+					Geometry<Node >& geom = ielem->GetGeometry();
 
 					//ParticlePointerVector&  element_particle_pointers =  (ielem->GetValue(BED_PARTICLE_POINTERS));
 					//int & number_of_particles_in_elem=ielem->GetValue(NUMBER_OF_BED_PARTICLES);
@@ -1072,7 +1072,7 @@ namespace Kratos
 					if (number_of_particles_in_elem<(minimum_number_of_particles))// && (ielem->GetGeometry())[0].Y()<0.10 )
 				    	{
 						//KRATOS_WATCH("elem with little particles")
-						Geometry< Node<3> >& geom = ielem->GetGeometry();
+						Geometry< Node >& geom = ielem->GetGeometry();
 						ComputeGaussPointPositionsForPreReseed(geom, pos, N);
 						//double conductivity = ielem->GetProperties()[CONDUCTIVITY];
 						//KRATOS_WATCH(conductivity);
@@ -1165,7 +1165,7 @@ namespace Kratos
 			//KRATOS_WATCH(elem_partition_size);
 			for (unsigned int i = 1; i < number_of_threads; i++)
 			elem_partition[i] = elem_partition[i - 1] + elem_partition_size;
-			//typedef Node < 3 > PointType;
+			//typedef Node PointType;
 			//std::vector<ModelPart::NodesContainerType> aux;// aux;
 			//aux.resize(number_of_threads);
 
@@ -1205,7 +1205,7 @@ namespace Kratos
 					int & number_of_particles_in_elem= mnumber_of_particles_in_elems[ii];
 					ParticlePointerVector&  element_particle_pointers =  mvector_of_particle_pointers_vectors[ii];
 
-					Geometry< Node<3> >& geom = ielem->GetGeometry();
+					Geometry< Node >& geom = ielem->GetGeometry();
 					if ( (number_of_particles_in_elem<(minimum_number_of_particles)))// && (geom[0].Y()<0.10) ) || (number_of_water_particles_in_elem>2 && number_of_particles_in_elem<(minimum_number_of_particles) ) )
 				    {
 
@@ -1305,7 +1305,7 @@ namespace Kratos
 
 				for (unsigned int i=0; i!=((mmaximum_number_of_particles*mnelems)/mfilter_factor)+mfilter_factor; i++)
 				{
-					Node < 3 > ::Pointer pnode = lagrangian_model_part.CreateNewNode( i+mlast_node_id+1 , 0.0, 0.0, 0.0);  //recordar que es el nueevo model part!!
+					Node ::Pointer pnode = lagrangian_model_part.CreateNewNode( i+mlast_node_id+1 , 0.0, 0.0, 0.0);  //recordar que es el nueevo model part!!
 					//pnode->SetBufferSize(mr_model_part.NodesBegin()->GetBufferSize());
 					pnode->SetBufferSize(1);
 				}
@@ -1387,7 +1387,7 @@ namespace Kratos
 		if(is_found == true)
 		{
 			KEEP_INTEGRATING=true;
-			Geometry< Node<3> >& geom = pelement->GetGeometry();//the element we're in
+			Geometry< Node >& geom = pelement->GetGeometry();//the element we're in
 			vel=ZeroVector(3);
 
 			for(unsigned int j=0; j<(TDim+1); j++)
@@ -1415,7 +1415,7 @@ namespace Kratos
 				  is_found = FindNodeOnMesh(position, N ,pelement,elements_in_trajectory,number_of_elements_in_trajectory,check_from_element_number,result_begin,MaxNumberOfResults); //good, now we know where this point is:
 				  if(is_found == true)
 				  {
-					Geometry< Node<3> >& geom = pelement->GetGeometry();//the element we're in
+					Geometry< Node >& geom = pelement->GetGeometry();//the element we're in
 
 					vel = ZeroVector(3);
 					for(unsigned int j=0; j<(TDim+1); j++)
@@ -1453,7 +1453,7 @@ namespace Kratos
 	void CorrectParticleUsingDeltaVariables(
 						 Convection_Particle & pparticle,
 						 Element::Pointer & pelement,
-						 Geometry< Node<3> >& geom)
+						 Geometry< Node >& geom)
 	{
 		array_1d<double,TDim+1> N;
 
@@ -1511,7 +1511,7 @@ namespace Kratos
 		if(is_found == true)
 		{
 			KEEP_INTEGRATING=true;
-			Geometry< Node<3> >& geom = pelement->GetGeometry();//the element we're in
+			Geometry< Node >& geom = pelement->GetGeometry();//the element we're in
 			vel=ZeroVector(3);
 			scalar1=0.0;
 
@@ -1533,7 +1533,7 @@ namespace Kratos
 				is_found = FindNodeOnMesh(position, N ,pelement,result_begin,MaxNumberOfResults); //good, now we know where this point is:
 				if(is_found == true)
 				{
-					Geometry< Node<3> >& geom = pelement->GetGeometry();//the element we're in
+					Geometry< Node >& geom = pelement->GetGeometry();//the element we're in
 
 					vel=ZeroVector(3);
 					scalar1=0.0;
@@ -1577,7 +1577,7 @@ namespace Kratos
 		const array_1d<double,3>& coords = position;
 		 array_1d<double,TDim+1> aux_N;
 	    //before using the bin to search for possible elements we check first the last element in which the particle was.
-		Geometry<Node<3> >& geom_default = pelement->GetGeometry(); //(*(i))->GetGeometry();
+		Geometry<Node >& geom_default = pelement->GetGeometry(); //(*(i))->GetGeometry();
 		bool is_found_1 = CalculatePosition(geom_default,coords[0],coords[1],coords[2],N);
 		if(is_found_1 == true) //that was easy!
 		{
@@ -1595,7 +1595,7 @@ namespace Kratos
 			if (N[i]<0.0)
 			{
 				checked_element=i;
-				Geometry<Node<3> >& geom = neighb_elems[i].GetGeometry();
+				Geometry<Node >& geom = neighb_elems[i].GetGeometry();
 				bool is_found_2 = CalculatePosition(geom,coords[0],coords[1],coords[2],aux_N);
 				if (is_found_2)
 				{
@@ -1612,7 +1612,7 @@ namespace Kratos
 		{
 			if(neighb_elems(i).get()!=nullptr)
 			{
-				Geometry<Node<3> >& geom = neighb_elems[i].GetGeometry();
+				Geometry<Node >& geom = neighb_elems[i].GetGeometry();
 				bool is_found_2 = CalculatePosition(geom,coords[0],coords[1],coords[2],N);
 				if (is_found_2)
 				{
@@ -1630,7 +1630,7 @@ namespace Kratos
 		//loop over the candidate elements and check if the particle falls within
 		for(SizeType i = 0; i< results_found; i++)
 		{
-			Geometry<Node<3> >& geom = (*(result_begin+i))->GetGeometry();
+			Geometry<Node >& geom = (*(result_begin+i))->GetGeometry();
 
 			//find local position
 			bool is_found = CalculatePosition(geom,coords[0],coords[1],coords[2],N);
@@ -1663,7 +1663,7 @@ namespace Kratos
 		const array_1d<double,3>& coords = position;
 		 array_1d<double,TDim+1> aux_N;
 	    //before using the bin to search for possible elements we check first the last element in which the particle was.
-		Geometry<Node<3> >& geom_default = pelement->GetGeometry(); //(*(i))->GetGeometry();
+		Geometry<Node >& geom_default = pelement->GetGeometry(); //(*(i))->GetGeometry();
 		bool is_found_1 = CalculatePosition(geom_default,coords[0],coords[1],coords[2],N);
 		if(is_found_1 == true)
 		{
@@ -1673,7 +1673,7 @@ namespace Kratos
 		//if it was not found in the first element, we can proceed to check in the following elements (in the trajectory defined by previous particles that started from the same element.
 		for (unsigned int i=(check_from_element_number);i!=number_of_elements_in_trajectory;i++)
 		{
-			Geometry<Node<3> >& geom = elements_in_trajectory[i].GetGeometry();
+			Geometry<Node >& geom = elements_in_trajectory[i].GetGeometry();
 			bool is_found_2 = CalculatePosition(geom,coords[0],coords[1],coords[2],aux_N);
 			if (is_found_2)
 			{
@@ -1696,7 +1696,7 @@ namespace Kratos
 			if (N[i]<0.0)
 			{
 				checked_element=i;
-				Geometry<Node<3> >& geom = neighb_elems[i].GetGeometry();
+				Geometry<Node >& geom = neighb_elems[i].GetGeometry();
 				bool is_found_2 = CalculatePosition(geom,coords[0],coords[1],coords[2],aux_N);
 				if (is_found_2)
 				{
@@ -1713,7 +1713,7 @@ namespace Kratos
 		{
 			if(neighb_elems(i).get()!=nullptr)
 			{
-				Geometry<Node<3> >& geom = neighb_elems[i].GetGeometry();
+				Geometry<Node >& geom = neighb_elems[i].GetGeometry();
 				bool is_found_2 = CalculatePosition(geom,coords[0],coords[1],coords[2],N);
 				if (is_found_2)
 				{
@@ -1739,7 +1739,7 @@ namespace Kratos
 			//loop over the candidate elements and check if the particle falls within
 			for(SizeType i = 0; i< results_found; i++)
 			{
-				Geometry<Node<3> >& geom = (*(result_begin+i))->GetGeometry();
+				Geometry<Node >& geom = (*(result_begin+i))->GetGeometry();
 
 				//find local position
 				bool is_found = CalculatePosition(geom,coords[0],coords[1],coords[2],N);
@@ -1767,7 +1767,7 @@ namespace Kratos
 	//***************************************
         //***************************************
 
-        inline bool CalculatePosition(Geometry<Node < 3 > >&geom,
+        inline bool CalculatePosition(Geometry<Node >&geom,
                 const double xc, const double yc, const double zc,
                 array_1d<double, 3 > & N
                 )
@@ -1840,7 +1840,7 @@ namespace Kratos
 	    //***************************************
         //***************************************
 
-        inline bool CalculatePosition(Geometry<Node < 3 > >&geom,
+        inline bool CalculatePosition(Geometry<Node >&geom,
                 const double xc, const double yc, const double zc,
                 array_1d<double, 4 > & N
                 )
@@ -1963,7 +1963,7 @@ namespace Kratos
 
 
 
-		void ComputeGaussPointPositions_4(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 7, 3 > & pos,BoundedMatrix<double, 7, 3 > & N)
+		void ComputeGaussPointPositions_4(Geometry< Node >& geom, BoundedMatrix<double, 7, 3 > & pos,BoundedMatrix<double, 7, 3 > & N)
         {
             double one_third = 1.0 / 3.0;
             double one_sixt = 0.15; //1.0 / 6.0;
@@ -2005,7 +2005,7 @@ namespace Kratos
         }
 
 
-        void ComputeGaussPointPositionsForPostReseed(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 7, 3 > & pos,BoundedMatrix<double, 7, 3 > & N) //2d
+        void ComputeGaussPointPositionsForPostReseed(Geometry< Node >& geom, BoundedMatrix<double, 7, 3 > & pos,BoundedMatrix<double, 7, 3 > & N) //2d
         {
             double one_third = 1.0 / 3.0;
             double one_eight = 0.12; //1.0 / 6.0;
@@ -2080,7 +2080,7 @@ namespace Kratos
 
         }
 
-        void ComputeGaussPointPositionsForPostReseed(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 9, 3 > & pos,BoundedMatrix<double, 9, 4 > & N) //3D
+        void ComputeGaussPointPositionsForPostReseed(Geometry< Node >& geom, BoundedMatrix<double, 9, 3 > & pos,BoundedMatrix<double, 9, 4 > & N) //3D
         {
             double one_quarter = 0.25;
             double small_fraction = 0.1; //1.0 / 6.0;
@@ -2148,7 +2148,7 @@ namespace Kratos
 
 
 
-        void ComputeGaussPointPositionsForPreReseed(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 3, 3 > & pos,BoundedMatrix<double, 3, 3 > & N) //2D
+        void ComputeGaussPointPositionsForPreReseed(Geometry< Node >& geom, BoundedMatrix<double, 3, 3 > & pos,BoundedMatrix<double, 3, 3 > & N) //2D
         {
 
             N(0, 0) = 0.5;
@@ -2180,7 +2180,7 @@ namespace Kratos
 
         }
 
-        void ComputeGaussPointPositionsForPreReseed(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 4, 3 > & pos,BoundedMatrix<double, 4, 4 > & N) //3D
+        void ComputeGaussPointPositionsForPreReseed(Geometry< Node >& geom, BoundedMatrix<double, 4, 3 > & pos,BoundedMatrix<double, 4, 4 > & N) //3D
         {
 			//creating 4 particles, each will be closer to a node and equidistant to the other nodes
 
@@ -2220,7 +2220,7 @@ namespace Kratos
 
 
 
-		void ComputeGaussPointPositions_45(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 45, 3 > & pos,BoundedMatrix<double, 45, 3 > & N)
+		void ComputeGaussPointPositions_45(Geometry< Node >& geom, BoundedMatrix<double, 45, 3 > & pos,BoundedMatrix<double, 45, 3 > & N)
         {
 			//std::cout << "NEW ELEMENT" << std::endl;
 			unsigned int counter=0;
@@ -2242,7 +2242,7 @@ namespace Kratos
 
         }
 
-        void ComputeGaussPointPositions_initial(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 15, 3 > & pos,BoundedMatrix<double, 15, 3 > & N) //2D
+        void ComputeGaussPointPositions_initial(Geometry< Node >& geom, BoundedMatrix<double, 15, 3 > & pos,BoundedMatrix<double, 15, 3 > & N) //2D
         {
 			//std::cout << "NEW ELEMENT" << std::endl;
 			unsigned int counter=0;
@@ -2264,7 +2264,7 @@ namespace Kratos
 
         }
 
-        void ComputeGaussPointPositions_initial(Geometry< Node < 3 > >& geom, BoundedMatrix<double, 20, 3 > & pos,BoundedMatrix<double, 20, 4 > & N) //3D
+        void ComputeGaussPointPositions_initial(Geometry< Node >& geom, BoundedMatrix<double, 20, 3 > & pos,BoundedMatrix<double, 20, 4 > & N) //3D
         {
 			//std::cout << "NEW ELEMENT" << std::endl;
 			//double total;
