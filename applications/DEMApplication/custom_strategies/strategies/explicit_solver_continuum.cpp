@@ -97,13 +97,6 @@ namespace Kratos {
             //RebuildListsOfPointersOfEachParticle(); //Serialized pointers are lost, so we rebuild them using Id's
         }
 
-        // Set Initial Contacts
-        if (r_process_info[CASE_OPTION] != 0) {
-            SetInitialDemContacts();
-        }
-
-        ComputeNewNeighboursHistoricalData();
-
         if (fem_model_part.Nodes().size() > 0) {
             SetSearchRadiiWithFemOnAllParticles(r_model_part, mpDem_model_part->GetProcessInfo()[SEARCH_RADIUS_INCREMENT_FOR_WALLS], 1.0);
             SearchRigidFaceNeighbours();
@@ -116,6 +109,8 @@ namespace Kratos {
             mpParticleCreatorDestructor->DestroyParticles<SphericParticle>(r_model_part);
             RebuildListOfSphericParticles<SphericParticle>(r_model_part.GetCommunicator().LocalMesh().Elements(), mListOfSphericParticles);
             RebuildListOfSphericParticles<SphericParticle>(r_model_part.GetCommunicator().GhostMesh().Elements(), mListOfGhostSphericParticles);
+            RebuildListOfSphericParticles <SphericContinuumParticle> (r_model_part.GetCommunicator().LocalMesh().Elements(), mListOfSphericContinuumParticles); //These lists are necessary because the elements in this partition might have changed.
+            RebuildListOfSphericParticles <SphericContinuumParticle> (r_model_part.GetCommunicator().GhostMesh().Elements(), mListOfGhostSphericContinuumParticles);
 
             // Search Neighbours and related operations
             SetSearchRadiiOnAllParticles(*mpDem_model_part, mpDem_model_part->GetProcessInfo()[SEARCH_RADIUS_INCREMENT_FOR_BONDS_CREATION], 1.0);
@@ -127,10 +122,10 @@ namespace Kratos {
             ComputeNewRigidFaceNeighboursHistoricalData();
         }
 
-        if (r_process_info[CRITICAL_TIME_OPTION]) {
-            //InitialTimeStepCalculation();   //obsolete call
-            CalculateMaxTimeStep();
-        }
+
+
+
+
 
         AttachSpheresToStickyWalls();
 
@@ -414,7 +409,7 @@ namespace Kratos {
                         ParticleContactElement* p_bond = dynamic_cast<ParticleContactElement*> (p_old_contact_element.get());
                         mListOfSphericContinuumParticles[i]->mBondElements[j] = p_bond;
                     } else {
-                        Geometry<Node<3> >::PointsArrayType NodeArray(2);
+                        Geometry<Node >::PointsArrayType NodeArray(2);
                         NodeArray.GetContainer()[0] = mListOfSphericContinuumParticles[i]->GetGeometry()(0);
                         NodeArray.GetContainer()[1] = neighbour_element->GetGeometry()(0);
                         const Properties::Pointer& properties = mListOfSphericContinuumParticles[i]->pGetProperties();

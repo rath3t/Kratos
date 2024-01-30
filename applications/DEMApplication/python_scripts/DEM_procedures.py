@@ -135,14 +135,13 @@ class SetOfModelParts():
 
 class GranulometryUtils():
 
-    def __init__(self, domain_volume, model_part, do_print_results_option=False):
+    def __init__(self, domain_volume, model_part):
 
         if domain_volume <= 0.0:
             raise ValueError(
                 "Error: The input domain volume must be strictly positive!")
 
         self.spheres_model_part = model_part
-        self.do_print_results_option = do_print_results_option
         self.UpdateData(domain_volume)
 
     def UpdateData(self, domain_volume):
@@ -159,8 +158,8 @@ class GranulometryUtils():
 
         self.voids_volume = domain_volume - self.solid_volume
         self.global_porosity = self.voids_volume / domain_volume
-        if self.do_print_results_option:
-            self.PrintCurrentData()
+
+        self.PrintCurrentData()
 
     def PrintCurrentData(self):
 
@@ -291,11 +290,12 @@ class DEMEnergyCalculator():
                 self.elastic_energy = 0.0
                 self.inelastic_frictional_energy = 0.0
                 self.inelastic_viscodamping_energy = 0.0
+                self.inelastic_rollingresistance_energy = 0.0
                 self.external_energy = 0.0
                 self.total_energy = 0.0
                 self.graph_frequency = int(self.DEM_parameters["GraphExportFreq"].GetDouble() / spheres_model_part.ProcessInfo.GetValue(DELTA_TIME))  # TODO: change the name GraphExportFreq to GraphExportTimeInterval
                 self.energy_graph_counter = 0
-                self.energy_plot.write(str("Time").rjust(9) + "   " + str("Trans kinematic energy").rjust(22) + "   " + str("Rot kinematic energy").rjust(20) + "   " + str("Kinematic energy").rjust(16) + "   " + str("Gravitational energy").rjust(20) + "   " + str("Elastic energy").rjust(14) + "   " + str("Frictional energy").rjust(16) + "   " + str("Viscodamping energy").rjust(19) + "   " + str("Total energy").rjust(12) + "\n")
+                self.energy_plot.write(str("Time").rjust(9) + "   " + str("Trans kinematic energy").rjust(22) + "   " + str("Rot kinematic energy").rjust(20) + "   " + str("Kinematic energy").rjust(16) + "   " + str("Gravitational energy").rjust(20) + "   " + str("Elastic energy").rjust(14) + "   " + str("Frictional energy").rjust(16) + "   " + str("Viscodamping energy").rjust(19) + "   " + str("Rolling resistance energy").rjust(25) + "   " + str("Total energy").rjust(12) + "\n")
 
     def CalculateEnergyAndPlot(self, time):
         if self.calculate_option:
@@ -315,7 +315,8 @@ class DEMEnergyCalculator():
         self.elastic_energy = self.SpheresEnergyUtil.CalculateElasticEnergy(self.SpheresModelPart) + self.ClusterEnergyUtil.CalculateElasticEnergy(self.ClusterModelPart)
         self.inelastic_frictional_energy = self.SpheresEnergyUtil.CalculateInelasticFrictionalEnergy(self.SpheresModelPart) + self.ClusterEnergyUtil.CalculateInelasticFrictionalEnergy(self.ClusterModelPart)
         self.inelastic_viscodamping_energy = self.SpheresEnergyUtil.CalculateInelasticViscodampingEnergy(self.SpheresModelPart) + self.ClusterEnergyUtil.CalculateInelasticViscodampingEnergy(self.ClusterModelPart)
-        self.total_energy = self.kinematic_energy + self.gravitational_energy + self.elastic_energy + self.inelastic_frictional_energy + self.inelastic_viscodamping_energy
+        self.inelastic_rollingresistance_energy = self.SpheresEnergyUtil.CalculateInelasticRollingResistanceEnergy(self.SpheresModelPart) + self.ClusterEnergyUtil.CalculateInelasticRollingResistanceEnergy(self.ClusterModelPart)
+        self.total_energy = self.kinematic_energy + self.gravitational_energy + self.elastic_energy + self.inelastic_frictional_energy + self.inelastic_viscodamping_energy + self.inelastic_rollingresistance_energy
 
     def PlotEnergyGraph(self, time):
 
@@ -326,8 +327,9 @@ class DEMEnergyCalculator():
         plot_elastic = self.elastic_energy
         plot_inelastic_frictional = self.inelastic_frictional_energy
         plot_inelastic_viscodamping = self.inelastic_viscodamping_energy
+        plot_inelastic_rollingresistance = self.inelastic_rollingresistance_energy
         plot_total = self.total_energy
-        self.energy_plot.write(str("%.8g" % time).rjust(9) + "   " + str("%.6g" % plot_translational_kinematic).rjust(22) + "   " + str("%.6g" % plot_rotational_kinematic).rjust(20) + "   " + str("%.6g" % plot_kinematic).rjust(16) + "   " + str("%.6g"%plot_gravitational).rjust(20) + "   " + str("%.6g" % plot_elastic).rjust(14) + "   " + str("%.6g" % plot_inelastic_frictional).rjust(16) + "   " + str("%.6g" % plot_inelastic_viscodamping).rjust(19) + "   " + str("%.6g" % plot_total).rjust(12) + '\n')
+        self.energy_plot.write(str("%.8g" % time).rjust(9) + "   " + str("%.6g" % plot_translational_kinematic).rjust(22) + "   " + str("%.6g" % plot_rotational_kinematic).rjust(20) + "   " + str("%.6g" % plot_kinematic).rjust(16) + "   " + str("%.6g"%plot_gravitational).rjust(20) + "   " + str("%.6g" % plot_elastic).rjust(14) + "   " + str("%.6g" % plot_inelastic_frictional).rjust(16) + "   " + str("%.6g" % plot_inelastic_viscodamping).rjust(19) + "   " + str("%.6g" % plot_inelastic_rollingresistance).rjust(23) + "   " + str("%.6g" % plot_total).rjust(12) + '\n')
         self.energy_plot.flush()
 
     def FinalizeEnergyPlot(self):
@@ -412,8 +414,8 @@ class Procedures():
         rigid_face_model_part = all_model_parts.Get('RigidFacePart')
 
         self.solver = weakref.proxy(solver)
-        #self.translational_scheme = weakref.proxy(translational_scheme)
-        #self.rotational_scheme = weakref.proxy(rotational_scheme)
+        self.translational_scheme = weakref.proxy(translational_scheme)
+        self.rotational_scheme = weakref.proxy(rotational_scheme)
         self.AddCommonVariables(spheres_model_part, DEM_parameters)
         self.AddSpheresVariables(spheres_model_part, DEM_parameters)
         self.AddMpiVariables(spheres_model_part)
@@ -509,7 +511,7 @@ class Procedures():
         model_part.AddNodalSolutionStepVariable(RADIUS)
         model_part.AddNodalSolutionStepVariable(REPRESENTATIVE_VOLUME)
         model_part.AddNodalSolutionStepVariable(NEIGHBOUR_SIZE)
-        model_part.AddNodalSolutionStepVariable(NEIGHBOUR_RATIO)        
+        model_part.AddNodalSolutionStepVariable(DAMAGE_RATIO)
 
         # ROTATION RELATED PROPERTIES
         if self.DEM_parameters["RotationOption"].GetBool():
@@ -551,6 +553,11 @@ class Procedures():
         # ONLY VISUALIZATION
         if self.DEM_parameters["PostExportId"].GetBool():  # TODO: add suffix Option
             model_part.AddNodalSolutionStepVariable(EXPORT_ID)
+
+        # ONLY VISUALIZATION
+        if "PostGroupId" in self.DEM_parameters.keys():
+            if self.DEM_parameters["PostGroupId"].GetBool(): 
+                model_part.AddNodalSolutionStepVariable(GROUP_ID)
 
         #model_part.AddNodalSolutionStepVariable(SPRAYED_MATERIAL)
 
@@ -840,6 +847,23 @@ class Procedures():
         creator_destructor.SetHighNode(b_box_high)
         creator_destructor.CalculateSurroundingBoundingBox(spheres_model_part, clusters_model_part, rigid_faces_model_part, dem_inlet_model_part, self.bounding_box_enlargement_factor, self.automatic_bounding_box_OPTION)
 
+    def UpdateBoundingBox(self, spheres_model_part, creator_destructor):
+
+        time = spheres_model_part.ProcessInfo.GetValue(TIME)
+        move_velocity = self.DEM_parameters["BoundingBoxMoveVelocity"].GetDouble()
+        
+        b_box_low = Array3()
+        b_box_high = Array3()
+        b_box_low[0] = self.b_box_minX + time * move_velocity
+        b_box_low[1] = self.b_box_minY + time * move_velocity
+        b_box_low[2] = self.b_box_minZ + time * move_velocity
+        b_box_high[0] = self.b_box_maxX - time * move_velocity
+        b_box_high[1] = self.b_box_maxY - time * move_velocity
+        b_box_high[2] = self.b_box_maxZ - time * move_velocity
+        creator_destructor.SetLowNode(b_box_low)
+        creator_destructor.SetHighNode(b_box_high)
+        creator_destructor.UpdateSurroundingBoundingBox(spheres_model_part)
+    
     def DeleteFiles(self):
         files_to_delete_list = glob('*.time')
         for to_erase_file in files_to_delete_list:
@@ -1293,6 +1317,7 @@ class DEMIo():
         self.PostAppliedForces = self.DEM_parameters["PostAppliedForces"].GetBool()
         self.PostDampForces = self.DEM_parameters["PostDampForces"].GetBool()
         self.PostRadius = self.DEM_parameters["PostRadius"].GetBool()
+        self.PostGroupId = GetBoolParameterIfItExists(self.DEM_parameters, "PostGroupId")
         self.PostExportId = self.DEM_parameters["PostExportId"].GetBool()
         self.PostSkinSphere = GetBoolParameterIfItExists(self.DEM_parameters, "PostSkinSphere")
         self.PostGluedSphere = GetBoolParameterIfItExists(self.DEM_parameters, "PostGluedSphere")
@@ -1306,6 +1331,7 @@ class DEMIo():
         self.PostContactTau = GetBoolParameterIfItExists(self.DEM_parameters, "PostContactTau")
         self.PostContactSigma = GetBoolParameterIfItExists(self.DEM_parameters, "PostContactSigma")
         self.PostMeanContactArea = GetBoolParameterIfItExists(self.DEM_parameters, "PostMeanContactArea")
+        self.PostContactRadius = GetBoolParameterIfItExists(self.DEM_parameters, "PostContactRadius")
         self.PostElasticForces = self.DEM_parameters["PostElasticForces"].GetBool()
         self.PostContactForces = self.DEM_parameters["PostContactForces"].GetBool()
         self.PostRigidElementForces = self.DEM_parameters["PostRigidElementForces"].GetBool()
@@ -1314,7 +1340,7 @@ class DEMIo():
         self.PostShearStress = self.DEM_parameters["PostShearStress"].GetBool()
         self.PostNodalArea = self.DEM_parameters["PostNodalArea"].GetBool()
         self.PostNeighbourSize = GetBoolParameterIfItExists(self.DEM_parameters, "PostNeighbourSize")
-        self.PostBrokenRatio = GetBoolParameterIfItExists(self.DEM_parameters, "PostBrokenRatio")
+        self.PostDamageRatio = GetBoolParameterIfItExists(self.DEM_parameters, "PostDamageRatio")
         self.PostNormalImpactVelocity = GetBoolParameterIfItExists(self.DEM_parameters, "PostNormalImpactVelocity")
         self.PostTangentialImpactVelocity = GetBoolParameterIfItExists(self.DEM_parameters, "PostTangentialImpactVelocity")
         self.PostControlModule = GetBoolParameterIfItExists(self.DEM_parameters, "PostControlModule")
@@ -1404,8 +1430,8 @@ class DEMIo():
     def Flush(self, a):
         a.flush()
 
-    def ShowPrintingResultsOnScreen(self, all_model_parts):
-        self.KratosPrintInfo("*******************  PRINTING RESULTS FOR GID  ***************************")
+    def ShowPrintingResultsOnScreen(self, all_model_parts, format_name):
+        self.KratosPrintInfo("*******************  PRINTING RESULTS FOR {}  ***************************".format(format_name))
         self.KratosPrintInfo("                        (" + str(all_model_parts.Get("SpheresPart").NumberOfElements(0)) + " elements)")
         self.KratosPrintInfo("                        (" + str(all_model_parts.Get("SpheresPart").NumberOfNodes(0)) + " nodes)")
         self.KratosPrintInfo("")
@@ -1476,6 +1502,7 @@ class DEMIo():
         self.PushPrintVar(self.PostFaceNormalImpactVelocity, FACE_NORMAL_IMPACT_VELOCITY, self.spheres_variables)
         self.PushPrintVar(self.PostFaceTangentialImpactVelocity, FACE_TANGENTIAL_IMPACT_VELOCITY, self.spheres_variables)
 
+        
         if "PostRollingResistanceMoment" in self.DEM_parameters.keys():
             if self.DEM_parameters["RotationOption"].GetBool():
                 if self.DEM_parameters["RollingFrictionOption"].GetBool():
@@ -1489,9 +1516,9 @@ class DEMIo():
             if self.DEM_parameters["PostNeighbourSize"].GetBool():
                 self.PushPrintVar(self.PostNeighbourSize, NEIGHBOUR_SIZE, self.spheres_variables)
 
-        if "PostBrokenRatio" in self.DEM_parameters.keys():
-            if self.DEM_parameters["PostBrokenRatio"].GetBool():
-                self.PushPrintVar(self.PostBrokenRatio, NEIGHBOUR_RATIO, self.spheres_variables)
+        if "PostDamageRatio" in self.DEM_parameters.keys():
+            if self.DEM_parameters["PostDamageRatio"].GetBool():
+                self.PushPrintVar(self.PostDamageRatio, DAMAGE_RATIO, self.spheres_variables)
 
         if self.PostGluedSphere:
             self.PushPrintVar(self.PostGluedSphere, IS_STICKY, self.spheres_variables)
@@ -1515,6 +1542,10 @@ class DEMIo():
         if "PostPoissonRatio" in self.DEM_parameters.keys():
             if self.DEM_parameters["PostPoissonRatio"].GetBool():
                 self.PushPrintVar(1, POISSON_VALUE, self.spheres_variables)
+
+        if "PostGroupId" in self.DEM_parameters.keys():
+            if self.DEM_parameters["PostGroupId"].GetBool():
+                self.PushPrintVar(self.PostGroupId, GROUP_ID, self.spheres_variables)
 
     def AddFEMBoundaryVariables(self):
         self.PushPrintVar(self.PostElasticForces, ELASTIC_FORCES, self.fem_boundary_variables)
@@ -1543,6 +1574,7 @@ class DEMIo():
                 self.PushPrintVar(self.PostContactTau, CONTACT_TAU, self.contact_variables)
                 self.PushPrintVar(self.PostContactSigma, CONTACT_SIGMA, self.contact_variables)
                 self.PushPrintVar(self.PostMeanContactArea, MEAN_CONTACT_AREA, self.contact_variables)
+                self.PushPrintVar(self.PostContactRadius, CONTACT_RADIUS, self.contact_variables)
 
     def AddMpiVariables(self):
         pass
@@ -1661,7 +1693,8 @@ class DEMIo():
 
             if self.contact_mesh_option:
                 #We overwrite the Id of the properties 0 not to overlap with other entities that use layer 0 for PRINTING
-                contact_model_part.GetProperties(0)[0].Id = 9184
+                if contact_model_part.HasProperties(0):
+                    contact_model_part.GetProperties(0).Id = 9184
                 self.gid_io.WriteMesh(contact_model_part.GetCommunicator().LocalMesh())
 
             self.gid_io.WriteMesh(rigid_face_model_part.GetCommunicator().LocalMesh())

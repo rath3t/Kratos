@@ -177,19 +177,20 @@ namespace Kratos {
                 sliding,
                 r_process_info);
 
-        FindMaximumValueOfNormalAndTangentialDamageComponents(element1, element2);
+        CalculateNormalAndTangentialDamageComponents(element1, element2);
 
         KRATOS_CATCH("")
     }
 
-    void DEM_KDEM_with_damage_parallel_bond::FindMaximumValueOfNormalAndTangentialDamageComponents(SphericContinuumParticle* element1,
+    void DEM_KDEM_with_damage_parallel_bond::CalculateNormalAndTangentialDamageComponents(SphericContinuumParticle* element1,
                                                                                                    SphericContinuumParticle* element2) {
 
         KRATOS_TRY
 
-        mDamageNormal = std::max(mDamageNormal, mDamageTangential);
-        mDamageTangential = std::max(mDamageNormal, mDamageTangential);
-        mDamageMoment = std::max(mDamageNormal, mDamageTangential);
+        mDamageReal += std::sqrt((mDamageNormal - mDamageReal) * (mDamageNormal - mDamageReal) + (mDamageTangential - mDamageReal) * (mDamageTangential - mDamageReal));
+        mDamageNormal = mDamageReal;
+        mDamageTangential = mDamageReal;
+        mDamageMoment = mDamageReal;
 
         KRATOS_CATCH("")
     }
@@ -331,6 +332,7 @@ namespace Kratos {
         if (bonded_indentation >= 0.0) { //COMPRESSION
             if (!failure_type) {
                 BondedLocalElasticContactForce2 = kn_updated * bonded_indentation;
+                delta_accumulated = bonded_indentation;
             } else {
                 BondedLocalElasticContactForce2 = 0.0;
             }
@@ -465,8 +467,14 @@ namespace Kratos {
         double BondedLocalElasticContactForce[2] = {0.0};
 
         if (!failure_type) {
-            BondedLocalElasticContactForce[0] = OldBondedLocalElasticContactForce[0] - kt_updated * LocalDeltDisp[0]; // 0: first tangential
-            BondedLocalElasticContactForce[1] = OldBondedLocalElasticContactForce[1] - kt_updated * LocalDeltDisp[1]; // 1: second tangential
+            //BondedLocalElasticContactForce[0] = OldBondedLocalElasticContactForce[0] - kt_updated * LocalDeltDisp[0]; // 0: first tangential
+            //BondedLocalElasticContactForce[1] = OldBondedLocalElasticContactForce[1] - kt_updated * LocalDeltDisp[1]; // 1: second tangential
+        
+            //Updated the calculation way of BondedLocalElasticContactForce
+            mAccumulatedBondedTangentialLocalDisplacement[0] += LocalDeltDisp[0];
+            mAccumulatedBondedTangentialLocalDisplacement[1] += LocalDeltDisp[1];
+            BondedLocalElasticContactForce[0] -= kt_updated * mAccumulatedBondedTangentialLocalDisplacement[0]; // 0: first tangential
+            BondedLocalElasticContactForce[1] -= kt_updated * mAccumulatedBondedTangentialLocalDisplacement[1]; // 1: second tangential
         } else {
             BondedLocalElasticContactForce[0] = 0.0; // 0: first tangential
             BondedLocalElasticContactForce[1] = 0.0; // 1: second tangential
@@ -619,6 +627,7 @@ namespace Kratos {
         double local_elastic_force_modulus = sqrt(LocalElasticContactForce[0] * LocalElasticContactForce[0] +
                                                   LocalElasticContactForce[1] * LocalElasticContactForce[1]);
 
+        // TODO: check whether [mBondedScalingFactor] and [mUnbondedScalingFactor] is right?
         if (local_elastic_force_modulus) {
             mBondedScalingFactor = (BondedLocalElasticContactForce[0] * LocalElasticContactForce[0] +
                                     BondedLocalElasticContactForce[1] * LocalElasticContactForce[1]) / (local_elastic_force_modulus * local_elastic_force_modulus);

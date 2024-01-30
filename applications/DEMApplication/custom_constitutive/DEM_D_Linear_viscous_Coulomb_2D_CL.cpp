@@ -17,11 +17,13 @@ namespace Kratos {
 
     void DEM_D_Linear_viscous_Coulomb2D::InitializeContact(SphericParticle* const element1, SphericParticle* const element2, const double indentation) {
 
+        //Get equivalent Young's Modulus
         const double my_young        = element1->GetYoung();
         const double other_young     = element2->GetYoung();
         const double my_poisson      = element1->GetPoisson();
         const double other_poisson   = element2->GetPoisson();
         const double equiv_young     = my_young * other_young / (other_young * (1.0 - my_poisson * my_poisson) + my_young * (1.0 - other_poisson * other_poisson));
+        
         double equiv_poisson;
         if (my_poisson + other_poisson) {
             equiv_poisson = 2.0 * my_poisson * other_poisson / (my_poisson + other_poisson);
@@ -30,6 +32,8 @@ namespace Kratos {
         }
 
         //Normal and Tangent elastic constants
+        //Taken from 'Contact between two cylinders with parallel axes' 
+        //https://en.wikipedia.org/wiki/Contact_mechanics#Contact_between_a_sphere_and_a_half-space
         mKn = 0.25 * Globals::Pi * equiv_young; // Here length is 1.0m
         mKt = mKn * (1.0 - equiv_poisson) / (1.0 - 0.5 * equiv_poisson);
     }
@@ -40,8 +44,8 @@ namespace Kratos {
         const double walls_young      = wall->GetProperties()[YOUNG_MODULUS];
         const double my_poisson       = element->GetPoisson();
         const double walls_poisson    = wall->GetProperties()[POISSON_RATIO];
-
         const double equiv_young      = my_young * walls_young / (walls_young * (1.0 - my_poisson * my_poisson) + my_young * (1.0 - walls_poisson * walls_poisson));
+
         double equiv_poisson = 0.0;
         if (my_poisson + walls_poisson) {
             equiv_poisson = 2.0 * my_poisson * walls_poisson / (my_poisson + walls_poisson);
@@ -62,6 +66,8 @@ namespace Kratos {
         */
 
         //Normal and Tangent elastic constants
+        //Taken from 'Contact between two cylinders with parallel axes' 
+        //https://en.wikipedia.org/wiki/Contact_mechanics#Contact_between_a_sphere_and_a_half-space
         mKn = 0.25 * Globals::Pi * equiv_young; // Here length is 1.0m
         mKt = mKn * (1.0 - equiv_poisson) / (1.0 - 0.5 * equiv_poisson);
     }

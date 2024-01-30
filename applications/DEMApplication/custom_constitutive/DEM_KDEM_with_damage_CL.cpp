@@ -98,8 +98,8 @@ namespace Kratos {
                 i_neighbour_count,
                 sliding,
                 r_process_info);
-
-        FindMaximumValueOfNormalAndTangentialDamageComponents();
+        
+        CalculateNormalAndTangentialDamageComponents();
 
         KRATOS_CATCH("")
     }
@@ -346,13 +346,14 @@ namespace Kratos {
         KRATOS_CATCH("")
     }
 
-    void DEM_KDEM_with_damage::FindMaximumValueOfNormalAndTangentialDamageComponents() {
+    void DEM_KDEM_with_damage::CalculateNormalAndTangentialDamageComponents() {
 
         KRATOS_TRY
 
-        mDamageNormal = std::max(mDamageNormal, mDamageTangential);
-        mDamageTangential = std::max(mDamageNormal, mDamageTangential);
-        mDamageMoment = std::max(mDamageNormal, mDamageTangential);
+        mDamageReal += std::sqrt((mDamageNormal - mDamageReal) * (mDamageNormal - mDamageReal) + (mDamageTangential - mDamageReal) * (mDamageTangential - mDamageReal));
+        mDamageNormal = mDamageReal;
+        mDamageTangential = mDamageReal;
+        mDamageMoment = mDamageReal;
 
         KRATOS_CATCH("")
     }
@@ -366,7 +367,8 @@ namespace Kratos {
                                                     double ElasticLocalRotationalMoment[3],
                                                     double ViscoLocalRotationalMoment[3],
                                                     double equiv_poisson,
-                                                    double indentation) {
+                                                    double indentation,
+                                                    double LocalElasticContactForce[3]) {
 
         KRATOS_TRY
 
@@ -379,7 +381,8 @@ namespace Kratos {
                                                     ElasticLocalRotationalMoment,
                                                     ViscoLocalRotationalMoment,
                                                     equiv_poisson,
-                                                    indentation);
+                                                    indentation,
+                                                    LocalElasticContactForce);
 
         ElasticLocalRotationalMoment[0] *= (1.0 - mDamageMoment);
         ElasticLocalRotationalMoment[1] *= (1.0 - mDamageMoment);

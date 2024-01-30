@@ -1,5 +1,3 @@
-import KratosMultiphysics
-import KratosMultiphysics.DEMApplication as DEMApplication
 import KratosMultiphysics.KratosUnittest as KratosUnittest
 
 #import test_guis
@@ -22,7 +20,7 @@ import test_DEM_3D_continuum
 import test_DEM_2D_inlet
 import test_DEM_3D_inlet
 import test_inlet
-#import test_DEM_2D_control_module
+import test_DEM_2D_control_module
 import test_post_process
 import test_friction_decay
 import test_forces_and_moments
@@ -34,6 +32,18 @@ import test_DEM_search_tolerance
 import test_DEM_search_flags
 import test_erase_particles
 import test_search_nodes
+import test_dem_3d_parallel_bond_model
+import test_dem_3d_smooth_joint_model
+import test_moving_periodic_boundary
+import sys
+sys.path.append('DEM3D_chung_ooi_tests/test1_data')
+sys.path.append('DEM3D_chung_ooi_tests/test2_data')
+sys.path.append('DEM3D_chung_ooi_tests/test3_data')
+sys.path.append('DEM3D_chung_ooi_tests/test4_data')
+import Chung_Ooi_test_1
+import Chung_Ooi_test_2
+import Chung_Ooi_test_3
+import Chung_Ooi_test_4
 
 def AssembleTestSuites():
 
@@ -74,7 +84,7 @@ def AssembleTestSuites():
     smallSuite.addTest(test_DEM_3D_restitution.TestDEM3DRestitution("test_DEM3D_restitution_1"))
     smallSuite.addTest(test_DEM_3D_restitution.TestDEM3DRestitution("test_DEM3D_restitution_2"))
     smallSuite.addTest(test_DEM_3D_continuum.TestDEM3DContinuum("test_DEM3D_continuum"))
-    #smallSuite.addTest(test_DEM_2D_control_module.TestDEM2DControlModule("test_DEM2D_control_module"))
+    smallSuite.addTest(test_DEM_2D_control_module.TestDEM2DControlModule("test_DEM2DControlModule"))
     smallSuite.addTest(test_post_process.TestPostProcess("test_gid_printing_many_results"))
     smallSuite.addTest(test_friction_decay.TestFrictionDecay("test_Friction_Decay"))
     smallSuite.addTest(test_forces_and_moments.TestExternalForcesAndMoments("test_ForcesAndMoments"))
@@ -94,6 +104,9 @@ def AssembleTestSuites():
     smallSuite.addTest(test_erase_particles.TestDEMEraseParticlesWithDelay("test_erase_particles_little_delay"))
     smallSuite.addTest(test_erase_particles.TestDEMEraseParticlesWithDelay("test_erase_particles_with_delay"))
     smallSuite.addTest(test_search_nodes.TestSearchNodes("test_SearchNodesInTargetModelPart"))
+    smallSuite.addTest(test_dem_3d_parallel_bond_model.TestParallelBondModel("test_ParallelBondModel_1"))
+    smallSuite.addTest(test_dem_3d_smooth_joint_model.TestSmoothJointModel("test_SmoothJointModel_1"))
+    smallSuite.addTest(test_moving_periodic_boundary.TestMovingPeriodicBoundary("test_MovingPeriodicBoundary"))
 
     # Create a test suit with the selected tests plus all small tests
     nightSuite = suites['nightly']
@@ -103,16 +116,23 @@ def AssembleTestSuites():
     nightSuite.addTest(test_DEM_search_tolerance.TestSearchTolerance("test_SearchB"))
     nightSuite.addTest(test_DEM_search_tolerance.TestSearchTolerance("test_SearchC"))
     nightSuite.addTest(test_DEM_search_tolerance.TestSearchTolerance("test_SearchD"))
+    nightSuite.addTest(Chung_Ooi_test_1.ChungOoiTest1("test_Run"))
+    nightSuite.addTest(Chung_Ooi_test_2.ChungOoiTest2("test_Run"))
+    nightSuite.addTest(Chung_Ooi_test_3.ChungOoiTest3("test_Run"))
+    nightSuite.addTest(Chung_Ooi_test_4.ChungOoiTest4("test_Run"))
+
+    nightSuite.addTests(smallSuite)
 
     # For very long tests that should not be in nightly and you can use to validate
     validationSuite = suites['validation']
+    validationSuite.addTests(nightSuite)
 
     # Create a test suit that contains all the tests:
     allSuite = suites['all']
-    allSuite.addTests(smallSuite)
-    allSuite.addTests(nightSuite)
+    allSuite.addTests(validationSuite)
 
     return suites
+
 
 if __name__ == '__main__':
     KratosUnittest.runTests(AssembleTestSuites())
