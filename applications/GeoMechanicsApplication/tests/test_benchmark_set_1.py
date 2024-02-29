@@ -148,13 +148,16 @@ class KratosGeoMechanicsBenchmarkSet1(KratosUnittest.TestCase):
         stages = [analysis.GeoMechanicsAnalysis(model, stage_parameters) for stage_parameters in parameters_stages]
 
         # run stages and get water pressure results per stage
+        number_of_nodes = 201
         stage_water_pressure = [None] * n_stages
         for idx, stage in enumerate(stages):
             stage.Run()
             stage_water_pressure[idx] = test_helper.get_water_pressure(stage)
+            self.assertEqual(len(stage_water_pressure[idx]), number_of_nodes)
 
         # get y coords of all the nodes
         coords = test_helper.get_nodal_coordinates(stages[0])
+        self.assertEqual(len(coords), number_of_nodes)
         y_coords = [coord[1] + 1 for coord in coords]
 
         # calculate analytical solution for all stages and calculate the error
