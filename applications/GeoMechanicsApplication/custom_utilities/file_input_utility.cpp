@@ -17,6 +17,8 @@
 namespace Kratos {
 
 Parameters FileInputUtility::ProjectParametersFromFile(const std::filesystem::path& rProjectFilePath) const {
+    KRATOS_INFO("FileInputUtility") << "Current path = " << std::filesystem::current_path().generic_string() << std::endl;
+    KRATOS_INFO("...") << "Project file path = " << rProjectFilePath.generic_string() << std::endl;
     std::ifstream t(rProjectFilePath);
     std::stringstream buffer;
     buffer << t.rdbuf();

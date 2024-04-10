@@ -1,3 +1,4 @@
+import os
 import sys
 import KratosMultiphysics
 import KratosMultiphysics.GeoMechanicsApplication
@@ -6,7 +7,8 @@ import KratosMultiphysics.LinearSolversApplication
 import argparse
 
 def run():
-    KratosMultiphysics.Tester.SetVerbosity(KratosMultiphysics.Tester.Verbosity.TESTS_LIST)
+    print(f"cwd = {os.getcwd()}")
+    KratosMultiphysics.Tester.SetVerbosity(KratosMultiphysics.Tester.Verbosity.TESTS_OUTPUTS)
 
     exitCode1 = KratosMultiphysics.Tester.RunTestSuite("KratosGeoMechanicsFastSuite")
 

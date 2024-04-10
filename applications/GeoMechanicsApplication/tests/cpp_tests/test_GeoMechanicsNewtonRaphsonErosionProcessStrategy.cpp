@@ -21,8 +21,9 @@
 namespace Kratos::Testing
 {
 
-KRATOS_TEST_CASE_IN_SUITE(ErosionProcessStrategy, KratosGeoMechanicsIntegrationSuite)
+KRATOS_TEST_CASE_IN_SUITE(ErosionProcessStrategy, KratosGeoMechanicsFastSuite)
 {
+    KRATOS_INFO("TestErosionProcessStrategy") << "Current path = " << std::filesystem::current_path().generic_string() << std::endl;
     auto workingDirectory = "./applications/GeoMechanicsApplication/tests/test_compare_sellmeijer/HeightAquiferD10L30.gid";
     auto projectFile = "ProjectParameters.json";
 
