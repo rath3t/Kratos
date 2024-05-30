@@ -559,7 +559,7 @@ void TransientPwElement<TDim, TNumNodes>::CalculateAndAddRHS(VectorType&       r
 {
     KRATOS_TRY;
 
-    this->CalculateAndAddCompressibilityFlow(rRightHandSideVector, rVariables);
+    //    this->CalculateAndAddCompressibilityFlow(rRightHandSideVector, rVariables);
     this->CalculateAndAddPermeabilityFlow(rRightHandSideVector, rVariables);
     this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);
 
