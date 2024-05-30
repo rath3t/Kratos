@@ -481,12 +481,15 @@ void TransientPwElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLeftH
             this->CalculateAndAddRHS(rRightHandSideVector, Variables, GPoint);
     }
 
+    const auto element_wide_compressibility =
+        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+            Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        const auto element_wide_compressibility =
-            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
-                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
-
         rLeftHandSideMatrix += element_wide_compressibility * Variables.DtPressureCoefficient;
+    }
+
+    if (CalculateResidualVectorFlag) {
+        rRightHandSideVector += -prod(element_wide_compressibility, Variables.DtPressureVector);
     }
 
     KRATOS_CATCH("")
@@ -559,7 +562,6 @@ void TransientPwElement<TDim, TNumNodes>::CalculateAndAddRHS(VectorType&       r
 {
     KRATOS_TRY;
 
-    //    this->CalculateAndAddCompressibilityFlow(rRightHandSideVector, rVariables);
     this->CalculateAndAddPermeabilityFlow(rRightHandSideVector, rVariables);
     this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);
 
