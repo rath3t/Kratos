@@ -147,6 +147,15 @@ void UPwUpdatedLagrangianFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& r
         }
     }
 
+    if (CalculateStiffnessMatrixFlag) {
+        const auto element_wide_compressibility =
+            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
+
+        GeoElementUtilities::AssemblePPBlockMatrix(
+            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
     KRATOS_CATCH("")
 }
 

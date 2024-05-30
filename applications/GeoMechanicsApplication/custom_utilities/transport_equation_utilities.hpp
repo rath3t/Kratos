@@ -74,6 +74,32 @@ public:
         return CalculateCompressibilityMatrix(rNp, BiotModulusInverse, IntegrationCoefficient);
     }
 
+    template <unsigned int TNumNodes>
+    static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculateCompressibilityMatrices(
+        const Matrix& rNContainer, const std::vector<double>& rInverseBiotModuli, const std::vector<double>& rIntegrationCoefficients)
+    {
+        BoundedMatrix<double, TNumNodes, TNumNodes> result = ZeroMatrix(TNumNodes, TNumNodes);
+        for (int i = 0; i < rNContainer.size1(); ++i) {
+            result += CalculateCompressibilityMatrix(row(rNContainer, i), rInverseBiotModuli[i],
+                                                     rIntegrationCoefficients[i]);
+        }
+
+        return result;
+    }
+
+    static inline Matrix CalculateCompressibilityMatrices(const Matrix& rNContainer,
+                                                          const std::vector<double>& rInverseBiotModuli,
+                                                          const std::vector<double>& rIntegrationCoefficients)
+    {
+        Matrix result;
+        for (int i = 0; i < rNContainer.size1(); ++i) {
+            result += CalculateCompressibilityMatrix(row(rNContainer, i), rInverseBiotModuli[i],
+                                                     rIntegrationCoefficients[i]);
+        }
+
+        return result;
+    }
+
     static inline Matrix CalculateCompressibilityMatrix(const Vector& rNp, double BiotModulusInverse, double IntegrationCoefficient)
     {
         return -PORE_PRESSURE_SIGN_FACTOR * BiotModulusInverse * outer_prod(rNp, rNp) * IntegrationCoefficient;

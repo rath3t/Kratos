@@ -1021,6 +1021,15 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
             this->CalculateAndAddRHS(rRightHandSideVector, Variables, GPoint);
     }
 
+    if (CalculateStiffnessMatrixFlag) {
+        const auto element_wide_compressibility =
+            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
+
+        GeoElementUtilities::AssemblePPBlockMatrix(
+            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
     KRATOS_CATCH("")
 }
 
@@ -1177,7 +1186,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddLHS(MatrixType& rLef
     KRATOS_TRY
 
     this->CalculateAndAddStiffnessMatrix(rLeftHandSideMatrix, rVariables);
-    this->CalculateAndAddCompressibilityMatrix(rLeftHandSideMatrix, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
@@ -1226,22 +1234,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCouplingMatrix(Matri
         // Distribute transposed coupling block matrix into the elemental matrix
         GeoElementUtilities::AssemblePUBlockMatrix(rLeftHandSideMatrix, rVariables.PUMatrix);
     }
-
-    KRATOS_CATCH("")
-}
-
-template <unsigned int TDim, unsigned int TNumNodes>
-void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCompressibilityMatrix(MatrixType& rLeftHandSideMatrix,
-                                                                                  ElementVariables& rVariables)
-{
-    KRATOS_TRY
-
-    rVariables.PPMatrix = GeoTransportEquationUtilities::CalculateCompressibilityMatrix(
-        rVariables.Np, rVariables.BiotModulusInverse, rVariables.IntegrationCoefficient);
-
-    // Distribute compressibility block matrix into the elemental matrix
-    GeoElementUtilities::AssemblePPBlockMatrix(
-        rLeftHandSideMatrix, rVariables.PPMatrix * rVariables.DtPressureCoefficient);
 
     KRATOS_CATCH("")
 }

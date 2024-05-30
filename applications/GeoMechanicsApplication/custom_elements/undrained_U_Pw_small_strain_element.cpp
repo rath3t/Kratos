@@ -101,8 +101,6 @@ void UndrainedUPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddLHS(MatrixT
 
     UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
 
-    UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCompressibilityMatrix(rLeftHandSideMatrix, rVariables);
-
     KRATOS_CATCH("");
 }
 

@@ -164,7 +164,6 @@ protected:
 
     void CalculateKinematics(ElementVariables& rVariables, unsigned int PointNumber) override;
 
-    void CalculateAndAddCompressibilityMatrix(MatrixType& rLeftHandSideMatrix, ElementVariables& rVariables) override;
     void CalculateAndAddPermeabilityFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
     void CalculateAndAddFluidBodyFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
     void CalculateAndAddCompressibilityFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
@@ -190,8 +189,7 @@ private:
     void load(Serializer& rSerializer) override{KRATOS_SERIALIZE_LOAD_BASE_CLASS(rSerializer, Element)}
 
     // Assignment operator.
-    TransientPwElement&
-    operator=(TransientPwElement const& rOther);
+    TransientPwElement& operator=(TransientPwElement const& rOther);
 
     // Copy constructor.
     TransientPwElement(TransientPwElement const& rOther);
