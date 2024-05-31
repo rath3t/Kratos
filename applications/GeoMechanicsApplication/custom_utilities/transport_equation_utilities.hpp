@@ -75,7 +75,7 @@ public:
     }
 
     template <unsigned int TNumNodes>
-    static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculateCompressibilityMatrices(
+    static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculateElementCompressibilityMatrix(
         const Matrix& rNContainer, const std::vector<double>& rInverseBiotModuli, const std::vector<double>& rIntegrationCoefficients)
     {
         BoundedMatrix<double, TNumNodes, TNumNodes> result = ZeroMatrix(TNumNodes, TNumNodes);
@@ -87,9 +87,9 @@ public:
         return result;
     }
 
-    static inline Matrix CalculateCompressibilityMatrices(const Matrix& rNContainer,
-                                                          const std::vector<double>& rInverseBiotModuli,
-                                                          const std::vector<double>& rIntegrationCoefficients)
+    static inline Matrix CalculateElementCompressibilityMatrix(const Matrix& rNContainer,
+                                                               const std::vector<double>& rInverseBiotModuli,
+                                                               const std::vector<double>& rIntegrationCoefficients)
     {
         Matrix result;
         for (int i = 0; i < rNContainer.size1(); ++i) {

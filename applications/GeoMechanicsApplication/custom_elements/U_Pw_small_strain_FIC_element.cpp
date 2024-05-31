@@ -510,7 +510,7 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLeftHa
     }
 
     const auto element_wide_compressibility =
-        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+        GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix<TNumNodes>(
             Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
         GeoElementUtilities::AssemblePPBlockMatrix(

@@ -482,7 +482,7 @@ void TransientPwElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLeftH
     }
 
     const auto element_wide_compressibility =
-        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+        GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix<TNumNodes>(
             Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
         rLeftHandSideMatrix += element_wide_compressibility * Variables.DtPressureCoefficient;
