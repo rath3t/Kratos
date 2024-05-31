@@ -166,7 +166,6 @@ protected:
 
     void CalculateAndAddPermeabilityFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
     void CalculateAndAddFluidBodyFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
-    void CalculateAndAddCompressibilityFlow(VectorType& rRightHandSideVector, ElementVariables& rVariables) override;
 
     unsigned int GetNumberOfDOF() const override;
     ///----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

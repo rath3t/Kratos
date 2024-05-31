@@ -1340,36 +1340,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCouplingTerms(Vector
 }
 
 template <unsigned int TDim, unsigned int TNumNodes>
-void UPwSmallStrainElement<TDim, TNumNodes>::CalculateCompressibilityFlow(
-    BoundedMatrix<double, TNumNodes, TNumNodes>& rPMatrix,
-    array_1d<double, TNumNodes>&                 rPVector,
-    const ElementVariables&                      rVariables) const
-{
-    KRATOS_TRY
-
-    noalias(rPMatrix) = GeoTransportEquationUtilities::CalculateCompressibilityMatrix(
-        rVariables.Np, rVariables.BiotModulusInverse, rVariables.IntegrationCoefficient);
-
-    noalias(rPVector) = -prod(rPMatrix, this->GetSolutionVector(DT_WATER_PRESSURE));
-
-    KRATOS_CATCH("")
-}
-
-template <unsigned int TDim, unsigned int TNumNodes>
-void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddCompressibilityFlow(VectorType& rRightHandSideVector,
-                                                                                ElementVariables& rVariables)
-{
-    KRATOS_TRY
-
-    this->CalculateCompressibilityFlow(rVariables.PPMatrix, rVariables.PVector, rVariables);
-
-    // Distribute compressibility block vector into elemental vector
-    GeoElementUtilities::AssemblePBlockVector(rRightHandSideVector, rVariables.PVector);
-
-    KRATOS_CATCH("")
-}
-
-template <unsigned int TDim, unsigned int TNumNodes>
 void UPwSmallStrainElement<TDim, TNumNodes>::CalculatePermeabilityFlow(
     BoundedMatrix<double, TNumNodes, TNumNodes>& rPermeabilityMatrix,
     array_1d<double, TNumNodes>&                 rPVector,
