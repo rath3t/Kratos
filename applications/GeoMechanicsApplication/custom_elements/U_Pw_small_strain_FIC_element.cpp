@@ -509,13 +509,18 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLeftHa
         }
     }
 
+    const auto element_wide_compressibility =
+        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+            Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        const auto element_wide_compressibility =
-            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
-                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
-
         GeoElementUtilities::AssemblePPBlockMatrix(
             rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
+    if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
+        GeoElementUtilities::AssemblePBlockVector(
+            rRightHandSideVector,
+            -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")
@@ -1469,7 +1474,8 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAndAddPressureGradientF
                                    (3.0 * SignBiotCoefficient)) *
         prod(rVariables.GradNpT, trans(rVariables.GradNpT)) * rVariables.IntegrationCoefficient;
 
-    noalias(rVariables.PVector) = -1.0 * prod(rVariables.PPMatrix, rVariables.DtPressureVector);
+    noalias(rVariables.PVector) =
+        -1.0 * prod(rVariables.PPMatrix, this->GetSolutionVector(DT_WATER_PRESSURE));
 
     // Distribute PressureGradient block vector into elemental vector
     GeoElementUtilities::AssemblePBlockVector(rRightHandSideVector, rVariables.PVector);

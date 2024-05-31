@@ -912,7 +912,7 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateMassMatrix(MatrixType& rMa
     const auto N_container = r_geom.ShapeFunctionsValues(integration_method);
 
     const auto fluid_pressures = GeoTransportEquationUtilities::CalculateFluidPressures(
-        N_container, this->GetPressureSolutionVector());
+        N_container, this->GetSolutionVector(WATER_PRESSURE));
     const auto degrees_saturation = this->CalculateDegreesOfSaturation(fluid_pressures);
 
     const auto solid_densities =
@@ -1021,20 +1021,25 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
             this->CalculateAndAddRHS(rRightHandSideVector, Variables, GPoint);
     }
 
+    const auto element_wide_compressibility =
+        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+            Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        const auto element_wide_compressibility =
-            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
-                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
-
         GeoElementUtilities::AssemblePPBlockMatrix(
             rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
+    if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
+        GeoElementUtilities::AssemblePBlockVector(
+            rRightHandSideVector, -prod(element_wide_compressibility, GetSolutionVector(DT_WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")
 }
 
 template <unsigned int TDim, unsigned int TNumNodes>
-std::vector<double> UPwSmallStrainElement<TDim, TNumNodes>::CalculateDerivativesOfSaturation(const std::vector<double>& rFluidPressures) const
+std::vector<double> UPwSmallStrainElement<TDim, TNumNodes>::CalculateDerivativesOfSaturation(
+    const std::vector<double>& rFluidPressures) const
 {
     KRATOS_ERROR_IF(rFluidPressures.size() != mRetentionLawVector.size());
     std::vector<double> result;
@@ -1050,7 +1055,8 @@ std::vector<double> UPwSmallStrainElement<TDim, TNumNodes>::CalculateDerivatives
 }
 
 template <unsigned int TDim, unsigned int TNumNodes>
-std::vector<double> UPwSmallStrainElement<TDim, TNumNodes>::CalculateDegreesOfSaturation(const std::vector<double>& rFluidPressures) const
+std::vector<double> UPwSmallStrainElement<TDim, TNumNodes>::CalculateDegreesOfSaturation(
+    const std::vector<double>& rFluidPressures) const
 {
     KRATOS_ERROR_IF(rFluidPressures.size() != mRetentionLawVector.size());
     std::vector<double> result;
@@ -1252,8 +1258,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddRHS(VectorType& rRig
     this->CalculateAndAddCouplingTerms(rRightHandSideVector, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
-        //        this->CalculateAndAddCompressibilityFlow(rRightHandSideVector, rVariables);
-
         this->CalculateAndAddPermeabilityFlow(rRightHandSideVector, rVariables);
 
         this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);
@@ -1346,7 +1350,7 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateCompressibilityFlow(
     noalias(rPMatrix) = GeoTransportEquationUtilities::CalculateCompressibilityMatrix(
         rVariables.Np, rVariables.BiotModulusInverse, rVariables.IntegrationCoefficient);
 
-    noalias(rPVector) = -prod(rPMatrix, rVariables.DtPressureVector);
+    noalias(rPVector) = -prod(rPMatrix, this->GetSolutionVector(DT_WATER_PRESSURE));
 
     KRATOS_CATCH("")
 }
@@ -1509,8 +1513,7 @@ void UPwSmallStrainElement<TDim, TNumNodes>::InitializeNodalPorePressureVariable
 
     // Nodal variables
     for (unsigned int i = 0; i < TNumNodes; ++i) {
-        rVariables.PressureVector[i]   = rGeom[i].FastGetSolutionStepValue(WATER_PRESSURE);
-        rVariables.DtPressureVector[i] = rGeom[i].FastGetSolutionStepValue(DT_WATER_PRESSURE);
+        rVariables.PressureVector[i] = rGeom[i].FastGetSolutionStepValue(WATER_PRESSURE);
     }
 
     KRATOS_CATCH("")
@@ -1742,11 +1745,12 @@ void UPwSmallStrainElement<3, 8>::CalculateExtrapolationMatrix(BoundedMatrix<dou
 }
 
 template <unsigned int TDim, unsigned int TNumNodes>
-Vector UPwSmallStrainElement<TDim, TNumNodes>::GetPressureSolutionVector()
+Vector UPwSmallStrainElement<TDim, TNumNodes>::GetSolutionVector(const Variable<double>& rVariable) const
 {
     Vector result(TNumNodes);
-    std::transform(this->GetGeometry().begin(), this->GetGeometry().end(), result.begin(),
-                   [](const auto& node) { return node.FastGetSolutionStepValue(WATER_PRESSURE); });
+    std::transform(
+        this->GetGeometry().begin(), this->GetGeometry().end(), result.begin(),
+        [&rVariable](const auto& node) { return node.FastGetSolutionStepValue(rVariable); });
     return result;
 }
 

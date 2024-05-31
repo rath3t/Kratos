@@ -133,13 +133,18 @@ void UPwUpdatedLagrangianElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLef
         }
     }
 
+    const auto element_wide_compressibility =
+        GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
+            Variables.NContainer, biot_moduli_inverse, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        const auto element_wide_compressibility =
-            GeoTransportEquationUtilities::CalculateCompressibilityMatrices<TNumNodes>(
-                Variables.NContainer, biot_moduli_inverse, integration_coefficients);
-
         GeoElementUtilities::AssemblePPBlockMatrix(
             rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
+    if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
+        GeoElementUtilities::AssemblePBlockVector(
+            rRightHandSideVector,
+            -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")

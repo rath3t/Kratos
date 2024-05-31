@@ -291,7 +291,7 @@ protected:
                                                          ElementVariables& rVariables,
                                                          unsigned int      GPoint);
 
-    VectorType GetPressureSolutionVector();
+    Vector GetSolutionVector(const Variable<double>& rVariable) const;
 
 private:
     friend class Serializer;

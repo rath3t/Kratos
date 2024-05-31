@@ -489,7 +489,8 @@ void TransientPwElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLeftH
     }
 
     if (CalculateResidualVectorFlag) {
-        rRightHandSideVector += -prod(element_wide_compressibility, Variables.DtPressureVector);
+        rRightHandSideVector +=
+            -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE));
     }
 
     KRATOS_CATCH("")
