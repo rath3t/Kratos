@@ -1662,23 +1662,10 @@ void SmallStrainUPwDiffOrderElement::CalculateAndAddLHS(MatrixType&       rLeftH
                                                         ElementVariables& rVariables) const
 {
     KRATOS_TRY
-    
+
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
     }
-
-    KRATOS_CATCH("")
-}
-
-void SmallStrainUPwDiffOrderElement::CalculateAndAddStiffnessMatrix(MatrixType& rLeftHandSideMatrix,
-                                                                    const ElementVariables& rVariables) const
-{
-    KRATOS_TRY
-
-    const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrixGPoint(
-        rVariables.B, rVariables.ConstitutiveMatrix, rVariables.IntegrationCoefficient);
-
-    GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
 
     KRATOS_CATCH("")
 }
@@ -1705,21 +1692,6 @@ void SmallStrainUPwDiffOrderElement::CalculateAndAddCouplingMatrix(MatrixType& r
         // Distribute transposed coupling block matrix into the elemental matrix
         GeoElementUtilities::AssemblePUBlockMatrix(rLeftHandSideMatrix, CouplingMatrixT);
     }
-
-    KRATOS_CATCH("")
-}
-
-void SmallStrainUPwDiffOrderElement::CalculateAndAddCompressibilityMatrix(MatrixType& rLeftHandSideMatrix,
-                                                                          ElementVariables& rVariables) const
-{
-    KRATOS_TRY
-
-    Matrix CompressibilityMatrix = GeoTransportEquationUtilities::CalculateCompressibilityMatrix(
-        rVariables.Np, rVariables.BiotModulusInverse, rVariables.IntegrationCoefficient);
-
-    // Distribute compressibility block matrix into the elemental matrix
-    GeoElementUtilities::AssemblePPBlockMatrix(
-        rLeftHandSideMatrix, CompressibilityMatrix * rVariables.DtPressureCoefficient);
 
     KRATOS_CATCH("")
 }
@@ -1817,22 +1789,6 @@ void SmallStrainUPwDiffOrderElement::CalculateAndAddCouplingTerms(VectorType& rR
     KRATOS_CATCH("")
 }
 
-void SmallStrainUPwDiffOrderElement::CalculateAndAddCompressibilityFlow(VectorType& rRightHandSideVector,
-                                                                        const ElementVariables& rVariables) const
-{
-    KRATOS_TRY
-
-    Matrix CompressibilityMatrix = GeoTransportEquationUtilities::CalculateCompressibilityMatrix(
-        rVariables.Np, rVariables.BiotModulusInverse, rVariables.IntegrationCoefficient);
-
-    Vector CompressibilityFlow = -prod(CompressibilityMatrix, rVariables.PressureDtVector);
-
-    // Distribute compressibility block vector into the elemental vector
-    GeoElementUtilities::AssemblePBlockVector(rRightHandSideVector, CompressibilityFlow);
-
-    KRATOS_CATCH("")
-}
-
 std::vector<double> SmallStrainUPwDiffOrderElement::CalculateRelativePermeabilityValues(const std::vector<double>& rFluidPressures) const
 {
     KRATOS_ERROR_IF_NOT(rFluidPressures.size() == mRetentionLawVector.size());
@@ -1861,24 +1817,6 @@ std::vector<double> SmallStrainUPwDiffOrderElement::CalculateBishopCoefficients(
         return pRetentionLaw->CalculateBishopCoefficient(retention_law_params);
     });
     return result;
-}
-
-void SmallStrainUPwDiffOrderElement::CalculateAndAddPermeabilityFlow(VectorType& rRightHandSideVector,
-                                                                     ElementVariables& rVariables) const
-{
-    KRATOS_TRY
-
-    Matrix PermeabilityMatrix =
-        -PORE_PRESSURE_SIGN_FACTOR * rVariables.DynamicViscosityInverse * rVariables.RelativePermeability *
-        prod(rVariables.DNp_DX, Matrix(prod(rVariables.IntrinsicPermeability, trans(rVariables.DNp_DX)))) *
-        rVariables.IntegrationCoefficient;
-
-    Vector PermeabilityFlow = -prod(PermeabilityMatrix, rVariables.PressureVector);
-
-    // Distribute permeability block vector into the elemental vector
-    GeoElementUtilities::AssemblePBlockVector(rRightHandSideVector, PermeabilityFlow);
-
-    KRATOS_CATCH("")
 }
 
 void SmallStrainUPwDiffOrderElement::CalculateAndAddFluidBodyFlow(VectorType& rRightHandSideVector,
