@@ -124,6 +124,18 @@ void UpdatedLagrangianUPwDiffOrderElement::CalculateAll(MatrixType&        rLeft
         }
     }
 
+    const auto element_wide_compressibility = GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix(
+        Variables.NpContainer, biot_moduli_inverse, integration_coefficients);
+    if (CalculateStiffnessMatrixFlag) {
+        GeoElementUtilities::AssemblePPBlockMatrix(
+            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
+    if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
+        GeoElementUtilities::AssemblePBlockVector(
+            rRightHandSideVector, -prod(element_wide_compressibility, Variables.PressureDtVector));
+    }
+
     KRATOS_CATCH("")
 }
 

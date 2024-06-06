@@ -1313,6 +1313,18 @@ void SmallStrainUPwDiffOrderElement::CalculateAll(MatrixType&        rLeftHandSi
             this->CalculateAndAddRHS(rRightHandSideVector, Variables, GPoint);
     }
 
+    const auto element_wide_compressibility = GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix(
+        Variables.NpContainer, biot_moduli_inverse, integration_coefficients);
+    if (CalculateStiffnessMatrixFlag) {
+        GeoElementUtilities::AssemblePPBlockMatrix(
+            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+    }
+
+    if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
+        GeoElementUtilities::AssemblePBlockVector(
+            rRightHandSideVector, -prod(element_wide_compressibility, Variables.PressureDtVector));
+    }
+
     KRATOS_CATCH("")
 }
 
@@ -1635,12 +1647,12 @@ std::vector<double> SmallStrainUPwDiffOrderElement::CalculateIntegrationCoeffici
     return result;
 }
 
-void SmallStrainUPwDiffOrderElement::CalculateAndAddLHS(MatrixType& rLeftHandSideMatrix, ElementVariables& rVariables) const
+void SmallStrainUPwDiffOrderElement::CalculateAndAddLHS(MatrixType&       rLeftHandSideMatrix,
+                                                        ElementVariables& rVariables) const
 {
     KRATOS_TRY
 
     this->CalculateAndAddStiffnessMatrix(rLeftHandSideMatrix, rVariables);
-    this->CalculateAndAddCompressibilityMatrix(rLeftHandSideMatrix, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
@@ -1721,8 +1733,6 @@ void SmallStrainUPwDiffOrderElement::CalculateAndAddRHS(VectorType&       rRight
     this->CalculateAndAddCouplingTerms(rRightHandSideVector, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
-        this->CalculateAndAddCompressibilityFlow(rRightHandSideVector, rVariables);
-
         this->CalculateAndAddPermeabilityFlow(rRightHandSideVector, rVariables);
 
         this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);

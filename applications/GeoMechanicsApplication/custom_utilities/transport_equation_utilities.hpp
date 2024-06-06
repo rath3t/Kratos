@@ -91,7 +91,7 @@ public:
                                                                const std::vector<double>& rInverseBiotModuli,
                                                                const std::vector<double>& rIntegrationCoefficients)
     {
-        Matrix result;
+        Matrix result = ZeroMatrix(rNContainer.size2(), rNContainer.size2());
         for (std::size_t i = 0; i < rNContainer.size1(); ++i) {
             result += CalculateCompressibilityMatrix(row(rNContainer, i), rInverseBiotModuli[i],
                                                      rIntegrationCoefficients[i]);
