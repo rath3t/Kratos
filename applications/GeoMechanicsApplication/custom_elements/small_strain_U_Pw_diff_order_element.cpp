@@ -1319,6 +1319,9 @@ void SmallStrainUPwDiffOrderElement::CalculateAll(MatrixType&        rLeftHandSi
         Variables.DNp_DXContainer, Variables.DynamicViscosityInverse,
         Variables.IntrinsicPermeability, relative_permeability_values, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
+        const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+            b_matrices, constitutive_matrices, integration_coefficients);
+        GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
             lhs_pressure_block += element_wide_permeability;
@@ -1659,9 +1662,7 @@ void SmallStrainUPwDiffOrderElement::CalculateAndAddLHS(MatrixType&       rLeftH
                                                         ElementVariables& rVariables) const
 {
     KRATOS_TRY
-
-    this->CalculateAndAddStiffnessMatrix(rLeftHandSideMatrix, rVariables);
-
+    
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
     }

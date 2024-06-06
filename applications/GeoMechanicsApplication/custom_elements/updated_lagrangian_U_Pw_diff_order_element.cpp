@@ -14,6 +14,7 @@
 
 // Project includes
 #include "custom_elements/updated_lagrangian_U_Pw_diff_order_element.hpp"
+#include "custom_utilities/equation_of_motion_utilities.h"
 #include "custom_utilities/math_utilities.h"
 #include "custom_utilities/transport_equation_utilities.hpp"
 #include "utilities/math_utils.h"
@@ -130,6 +131,9 @@ void UpdatedLagrangianUPwDiffOrderElement::CalculateAll(MatrixType&        rLeft
         Variables.DNp_DXContainer, Variables.DynamicViscosityInverse,
         Variables.IntrinsicPermeability, relative_permeability_values, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
+        const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+            b_matrices, constitutive_matrices, integration_coefficients);
+        GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
             lhs_pressure_block += element_wide_permeability;
