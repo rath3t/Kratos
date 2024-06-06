@@ -126,14 +126,22 @@ void UpdatedLagrangianUPwDiffOrderElement::CalculateAll(MatrixType&        rLeft
 
     const auto element_wide_compressibility = GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix(
         Variables.NpContainer, biot_moduli_inverse, integration_coefficients);
+    const auto element_wide_permeability = GeoTransportEquationUtilities::CalculateElementPermeabilityMatrix(
+        Variables.DNp_DXContainer, Variables.DynamicViscosityInverse,
+        Variables.IntrinsicPermeability, relative_permeability_values, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        GeoElementUtilities::AssemblePPBlockMatrix(
-            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+        MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
+        if (!Variables.IgnoreUndrained) {
+            lhs_pressure_block += element_wide_permeability;
+        }
+
+        GeoElementUtilities::AssemblePPBlockMatrix(rLeftHandSideMatrix, lhs_pressure_block);
     }
 
     if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
         GeoElementUtilities::AssemblePBlockVector(
-            rRightHandSideVector, -prod(element_wide_compressibility, Variables.PressureDtVector));
+            rRightHandSideVector, -prod(element_wide_compressibility, Variables.PressureDtVector) -
+                                      prod(element_wide_permeability, Variables.PressureVector));
     }
 
     KRATOS_CATCH("")

@@ -43,6 +43,22 @@ public:
         return result;
     }
 
+    static inline Matrix CalculateElementPermeabilityMatrix(const Geometry<Node>::ShapeFunctionsGradientsType& rGradNpTContainer,
+                                                            double DynamicViscosityInverse,
+                                                            const Matrix& rMaterialPermeabilityMatrix,
+                                                            const std::vector<double>& rRelativePermeabilities,
+                                                            const std::vector<double>& rIntegrationCoefficients)
+    {
+        Matrix result = ZeroMatrix(rGradNpTContainer[0].size1(), rGradNpTContainer[0].size1());
+        for (std::size_t i = 0; i < rGradNpTContainer.size(); ++i) {
+            result += CalculatePermeabilityMatrix(
+                rGradNpTContainer[i], DynamicViscosityInverse, rMaterialPermeabilityMatrix,
+                rRelativePermeabilities[i], rIntegrationCoefficients[i]);
+        }
+
+        return result;
+    }
+
     template <unsigned int TDim, unsigned int TNumNodes>
     static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculatePermeabilityMatrix(
         const Matrix&                            rGradNpT,
