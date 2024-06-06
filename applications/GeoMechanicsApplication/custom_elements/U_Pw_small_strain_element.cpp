@@ -1024,14 +1024,23 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
     const auto element_wide_compressibility =
         GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix<TNumNodes>(
             Variables.NContainer, biot_moduli_inverse, integration_coefficients);
+    const auto element_wide_permeability =
+        GeoTransportEquationUtilities::CalculateElementPermeabilityMatrix<TDim, TNumNodes>(
+            Variables.DN_DXContainer, Variables.DynamicViscosityInverse,
+            Variables.PermeabilityMatrix, relative_permeability_values, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        GeoElementUtilities::AssemblePPBlockMatrix(
-            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+        MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
+        if (!Variables.IgnoreUndrained) {
+            lhs_pressure_block += element_wide_permeability;
+        }
+
+        GeoElementUtilities::AssemblePPBlockMatrix(rLeftHandSideMatrix, lhs_pressure_block);
     }
 
     if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
         GeoElementUtilities::AssemblePBlockVector(
-            rRightHandSideVector, -prod(element_wide_compressibility, GetSolutionVector(DT_WATER_PRESSURE)));
+            rRightHandSideVector, -prod(element_wide_compressibility, GetSolutionVector(DT_WATER_PRESSURE)) -
+                                      prod(element_wide_permeability, GetSolutionVector(WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")
@@ -1195,12 +1204,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddLHS(MatrixType& rLef
 
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddCouplingMatrix(rLeftHandSideMatrix, rVariables);
-
-        const auto permeability_matrix =
-            GeoTransportEquationUtilities::CalculatePermeabilityMatrix<TDim, TNumNodes>(
-                rVariables.GradNpT, rVariables.DynamicViscosityInverse, rVariables.PermeabilityMatrix,
-                rVariables.RelativePermeability, rVariables.IntegrationCoefficient);
-        GeoElementUtilities::AssemblePPBlockMatrix(rLeftHandSideMatrix, permeability_matrix);
     }
 
     KRATOS_CATCH("")
@@ -1258,8 +1261,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddRHS(VectorType& rRig
     this->CalculateAndAddCouplingTerms(rRightHandSideVector, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
-        this->CalculateAndAddPermeabilityFlow(rRightHandSideVector, rVariables);
-
         this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);
     }
 

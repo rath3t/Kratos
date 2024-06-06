@@ -26,6 +26,24 @@ class GeoTransportEquationUtilities
 {
 public:
     template <unsigned int TDim, unsigned int TNumNodes>
+    static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculateElementPermeabilityMatrix(
+        const Geometry<Node>::ShapeFunctionsGradientsType& rGradNpTContainer,
+        double                                             DynamicViscosityInverse,
+        const BoundedMatrix<double, TDim, TDim>&           rMaterialPermeabilityMatrix,
+        const std::vector<double>&                         rRelativePermeabilities,
+        const std::vector<double>&                         rIntegrationCoefficients)
+    {
+        BoundedMatrix<double, TNumNodes, TNumNodes> result = ZeroMatrix(TNumNodes, TNumNodes);
+        for (std::size_t i = 0; i < rGradNpTContainer.size(); ++i) {
+            result += CalculatePermeabilityMatrix(
+                rGradNpTContainer[i], DynamicViscosityInverse, rMaterialPermeabilityMatrix,
+                rRelativePermeabilities[i], rIntegrationCoefficients[i]);
+        }
+
+        return result;
+    }
+
+    template <unsigned int TDim, unsigned int TNumNodes>
     static inline BoundedMatrix<double, TNumNodes, TNumNodes> CalculatePermeabilityMatrix(
         const Matrix&                            rGradNpT,
         double                                   DynamicViscosityInverse,

@@ -136,17 +136,25 @@ void UPwUpdatedLagrangianElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLef
     const auto element_wide_compressibility =
         GeoTransportEquationUtilities::CalculateElementCompressibilityMatrix<TNumNodes>(
             Variables.NContainer, biot_moduli_inverse, integration_coefficients);
+    const auto element_wide_permeability =
+        GeoTransportEquationUtilities::CalculateElementPermeabilityMatrix<TDim, TNumNodes>(
+            Variables.DN_DXContainer, Variables.DynamicViscosityInverse,
+            Variables.PermeabilityMatrix, relative_permeability_values, integration_coefficients);
     if (CalculateStiffnessMatrixFlag) {
-        GeoElementUtilities::AssemblePPBlockMatrix(
-            rLeftHandSideMatrix, element_wide_compressibility * Variables.DtPressureCoefficient);
+        MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
+        if (!Variables.IgnoreUndrained) {
+            lhs_pressure_block += element_wide_permeability;
+        }
+
+        GeoElementUtilities::AssemblePPBlockMatrix(rLeftHandSideMatrix, lhs_pressure_block);
     }
 
     if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
         GeoElementUtilities::AssemblePBlockVector(
             rRightHandSideVector,
-            -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE)));
+            -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE)) -
+                prod(element_wide_permeability, this->GetSolutionVector(WATER_PRESSURE)));
     }
-
     KRATOS_CATCH("")
 }
 
