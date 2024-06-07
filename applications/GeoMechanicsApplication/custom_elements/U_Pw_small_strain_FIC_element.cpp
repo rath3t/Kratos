@@ -516,10 +516,23 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLeftHa
         GeoTransportEquationUtilities::CalculateElementPermeabilityMatrix<TDim, TNumNodes>(
             Variables.DN_DXContainer, Variables.DynamicViscosityInverse,
             Variables.PermeabilityMatrix, relative_permeability_values, integration_coefficients);
+    const auto element_wide_coupling_UP =
+        GeoTransportEquationUtilities::CalculateElementCouplingMatrix<TDim, TNumNodes>(
+            b_matrices, this->GetStressStatePolicy().GetVoigtVector(), Variables.NContainer,
+            biot_coefficients, bishop_coefficients, integration_coefficients);
+    const auto element_wide_coupling_PU =
+        PORE_PRESSURE_SIGN_FACTOR *
+        trans(GeoTransportEquationUtilities::CalculateElementCouplingMatrix<TDim, TNumNodes>(
+            b_matrices, this->GetStressStatePolicy().GetVoigtVector(), Variables.NContainer,
+            biot_coefficients, degrees_of_saturation, integration_coefficients));
+
     if (CalculateStiffnessMatrixFlag) {
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
             lhs_pressure_block += element_wide_permeability;
+            GeoElementUtilities::AssembleUPBlockMatrix(rLeftHandSideMatrix, element_wide_coupling_UP);
+            GeoElementUtilities::AssemblePUBlockMatrix(
+                rLeftHandSideMatrix, element_wide_coupling_PU * Variables.VelocityCoefficient);
         }
 
         GeoElementUtilities::AssemblePPBlockMatrix(rLeftHandSideMatrix, lhs_pressure_block);

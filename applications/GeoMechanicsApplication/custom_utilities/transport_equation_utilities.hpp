@@ -83,6 +83,25 @@ public:
     }
 
     template <unsigned int TDim, unsigned int TNumNodes>
+    static inline BoundedMatrix<double, TNumNodes * TDim, TNumNodes> CalculateElementCouplingMatrix(
+        const std::vector<Matrix>& rBMatrices,
+        const Vector&              rVoigtVector,
+        const Matrix&              rNpContainer,
+        const std::vector<double>& rBiotCoefficients,
+        const std::vector<double>& rBishopCoefficients,
+        const std::vector<double>& rIntegrationCoefficients)
+    {
+        BoundedMatrix<double, TNumNodes * TDim, TNumNodes> result = ZeroMatrix(TNumNodes * TDim, TNumNodes);
+        for (std::size_t i = 0; i < rBMatrices.size(); ++i) {
+            result += CalculateCouplingMatrix(rBMatrices[i], rVoigtVector, row(rNpContainer, i),
+                                              rBiotCoefficients[i], rBishopCoefficients[i],
+                                              rIntegrationCoefficients[i]);
+        }
+
+        return result;
+    }
+
+    template <unsigned int TDim, unsigned int TNumNodes>
     static inline BoundedMatrix<double, TNumNodes * TDim, TNumNodes> CalculateCouplingMatrix(
         const Matrix& rB, const Vector& rVoigtVector, const Vector& rNp, double BiotCoefficient, double BishopCoefficient, double IntegrationCoefficient)
     {
