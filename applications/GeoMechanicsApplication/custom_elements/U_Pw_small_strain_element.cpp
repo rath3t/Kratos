@@ -1041,6 +1041,10 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
     if (CalculateStiffnessMatrixFlag) {
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
+            const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+                b_matrices, constitutive_matrices, integration_coefficients);
+            GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
+
             lhs_pressure_block += element_wide_permeability;
             GeoElementUtilities::AssembleUPBlockMatrix(rLeftHandSideMatrix, element_wide_coupling_UP);
             GeoElementUtilities::AssemblePUBlockMatrix(
@@ -1215,11 +1219,6 @@ template <unsigned int TDim, unsigned int TNumNodes>
 void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddLHS(MatrixType& rLeftHandSideMatrix,
                                                                 ElementVariables& rVariables)
 {
-    KRATOS_TRY
-
-    this->CalculateAndAddStiffnessMatrix(rLeftHandSideMatrix, rVariables);
-
-    KRATOS_CATCH("")
 }
 
 template <unsigned int TDim, unsigned int TNumNodes>

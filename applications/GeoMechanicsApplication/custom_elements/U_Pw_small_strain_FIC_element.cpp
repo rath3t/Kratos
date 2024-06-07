@@ -13,6 +13,7 @@
 
 // Application includes
 #include "custom_elements/U_Pw_small_strain_FIC_element.hpp"
+#include "custom_utilities/equation_of_motion_utilities.h"
 #include "custom_utilities/math_utilities.h"
 #include "custom_utilities/transport_equation_utilities.hpp"
 
@@ -529,6 +530,10 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLeftHa
     if (CalculateStiffnessMatrixFlag) {
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
+            const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+                b_matrices, constitutive_matrices, integration_coefficients);
+            GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
+
             lhs_pressure_block += element_wide_permeability;
             GeoElementUtilities::AssembleUPBlockMatrix(rLeftHandSideMatrix, element_wide_coupling_UP);
             GeoElementUtilities::AssemblePUBlockMatrix(

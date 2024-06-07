@@ -14,6 +14,7 @@
 
 // Project includes
 #include "custom_elements/U_Pw_updated_lagrangian_FIC_element.hpp"
+#include "custom_utilities/equation_of_motion_utilities.h"
 #include "custom_utilities/math_utilities.h"
 #include "custom_utilities/transport_equation_utilities.hpp"
 #include "utilities/math_utils.h"
@@ -167,6 +168,10 @@ void UPwUpdatedLagrangianFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& r
     if (CalculateStiffnessMatrixFlag) {
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
+            const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+                b_matrices, constitutive_matrices, integration_coefficients);
+            GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
+
             lhs_pressure_block += element_wide_permeability;
             GeoElementUtilities::AssembleUPBlockMatrix(rLeftHandSideMatrix, element_wide_coupling_UP);
             GeoElementUtilities::AssemblePUBlockMatrix(
