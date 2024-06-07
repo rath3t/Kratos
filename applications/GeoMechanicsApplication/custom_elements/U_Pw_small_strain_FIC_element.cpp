@@ -542,7 +542,11 @@ void UPwSmallStrainFICElement<TDim, TNumNodes>::CalculateAll(MatrixType& rLeftHa
         GeoElementUtilities::AssemblePBlockVector(
             rRightHandSideVector,
             -prod(element_wide_compressibility, this->GetSolutionVector(DT_WATER_PRESSURE)) -
-                prod(element_wide_permeability, this->GetSolutionVector(WATER_PRESSURE)));
+                prod(element_wide_permeability, this->GetSolutionVector(WATER_PRESSURE)) -
+                prod(element_wide_coupling_PU, Variables.VelocityVector));
+
+        GeoElementUtilities::AssembleUBlockVector(
+            rRightHandSideVector, -prod(element_wide_coupling_UP, this->GetSolutionVector(WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")

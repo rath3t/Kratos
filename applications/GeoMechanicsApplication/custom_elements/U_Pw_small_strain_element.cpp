@@ -1053,7 +1053,11 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
     if (CalculateResidualVectorFlag && !Variables.IgnoreUndrained) {
         GeoElementUtilities::AssemblePBlockVector(
             rRightHandSideVector, -prod(element_wide_compressibility, GetSolutionVector(DT_WATER_PRESSURE)) -
-                                      prod(element_wide_permeability, GetSolutionVector(WATER_PRESSURE)));
+                                      prod(element_wide_permeability, GetSolutionVector(WATER_PRESSURE)) -
+                                      prod(element_wide_coupling_PU, Variables.VelocityVector));
+
+        GeoElementUtilities::AssembleUBlockVector(
+            rRightHandSideVector, -prod(element_wide_coupling_UP, GetSolutionVector(WATER_PRESSURE)));
     }
 
     KRATOS_CATCH("")
@@ -1266,8 +1270,6 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAndAddRHS(VectorType& rRig
     this->CalculateAndAddStiffnessForce(rRightHandSideVector, rVariables, GPoint);
 
     this->CalculateAndAddMixBodyForce(rRightHandSideVector, rVariables);
-
-    this->CalculateAndAddCouplingTerms(rRightHandSideVector, rVariables);
 
     if (!rVariables.IgnoreUndrained) {
         this->CalculateAndAddFluidBodyFlow(rRightHandSideVector, rVariables);
