@@ -1039,13 +1039,14 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
             biot_coefficients, degrees_of_saturation, integration_coefficients));
 
     if (CalculateStiffnessMatrixFlag) {
+        const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
+            b_matrices, constitutive_matrices, integration_coefficients);
+        GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
+
         MatrixType lhs_pressure_block = element_wide_compressibility * Variables.DtPressureCoefficient;
         if (!Variables.IgnoreUndrained) {
-            const auto stiffness_matrix = GeoEquationOfMotionUtilities::CalculateStiffnessMatrix(
-                b_matrices, constitutive_matrices, integration_coefficients);
-            GeoElementUtilities::AssembleUUBlockMatrix(rLeftHandSideMatrix, stiffness_matrix);
-
             lhs_pressure_block += element_wide_permeability;
+
             GeoElementUtilities::AssembleUPBlockMatrix(rLeftHandSideMatrix, element_wide_coupling_UP);
             GeoElementUtilities::AssemblePUBlockMatrix(
                 rLeftHandSideMatrix, element_wide_coupling_PU * Variables.VelocityCoefficient);
