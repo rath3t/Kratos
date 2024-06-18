@@ -314,6 +314,9 @@ void ReadMaterialsUtility::AssignTablesToProperty(
             std::string output_var_name = table_param["output_variable"].GetString();
             TrimComponentName(output_var_name);
 
+            KRATOS_ERROR_IF_NOT(KratosComponents<Variable<double>>::Has(input_var_name)) << "missing variable: " << input_var_name << '\n';
+            KRATOS_ERROR_IF_NOT(KratosComponents<Variable<double>>::Has(output_var_name)) << "missing variable: " << output_var_name << '\n';
+
             const auto& r_input_var  = KratosComponents<Variable<double>>().Get(input_var_name);
             const auto& r_output_var = KratosComponents<Variable<double>>().Get(output_var_name);
 

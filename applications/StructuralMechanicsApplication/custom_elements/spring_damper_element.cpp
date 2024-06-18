@@ -19,7 +19,9 @@
 #include "includes/define.h"
 #include "custom_elements/spring_damper_element.hpp"
 
+#include "spaces/ublas_space.h"
 #include "structural_mechanics_application_variables.h"
+#include "custom_utilities/structural_mechanics_element_utilities.h"
 
 namespace Kratos
 {
@@ -114,12 +116,12 @@ void SpringDamperElement<TDim>::GetDofList( DofsVectorType& rElementalDofList, c
     {
         rElementalDofList.resize(msElementSize);
     }
-    
+
 
     for ( SizeType i = 0; i < msNumNodes; ++i ) {
         const SizeType index = i * msLocalSize;
         if constexpr (TDim == 2){
-            
+
             rElementalDofList[index] = GetGeometry()[i].pGetDof(DISPLACEMENT_X);
             rElementalDofList[index + 1] = GetGeometry()[i].pGetDof(DISPLACEMENT_Y);
             rElementalDofList[index + 2] = GetGeometry()[i].pGetDof(ROTATION_Z);
@@ -240,6 +242,22 @@ void SpringDamperElement<TDim>::GetFirstDerivativesVector( Vector& rValues, int 
 //*********************************ACCELERATION***************************************
 //************************************************************************************
 
+template <std::size_t TDim>
+void SpringDamperElement<TDim>::InitializeNonLinearIteration(const ProcessInfo& rProcessInfo)
+{
+    std::array<array_1d<double,3>,2> displacements, rotations;
+
+    for (unsigned i_node : {0u, 1u}) {
+        displacements[i_node] = this->GetGeometry()[i_node].FastGetSolutionStepValue(DISPLACEMENT);
+        rotations[i_node] = this->GetGeometry()[i_node].FastGetSolutionStepValue(ROTATION);
+    }
+
+    for (unsigned i_node : {0u, 1u}) {
+        this->GetGeometry()[i_node].SetValue(RELATIVE_DISPLACEMENT, displacements[i_node]);
+        this->GetGeometry()[i_node].SetValue(RELATIVE_ROTATION, rotations[i_node]);
+    }
+}
+
 template<std::size_t TDim>
 void SpringDamperElement<TDim>::GetSecondDerivativesVector( Vector& rValues, int Step ) const
 {
@@ -286,7 +304,7 @@ void SpringDamperElement<TDim>::CalculateLocalSystem(
 
     KRATOS_TRY;
 
-    this->ConstCalculateLocalSystem(rLeftHandSideMatrix, rRightHandSideVector);
+    this->ConstCalculateLocalSystem(rLeftHandSideMatrix, rRightHandSideVector, rCurrentProcessInfo);
 
     KRATOS_CATCH( "" );
 }
@@ -295,25 +313,27 @@ void SpringDamperElement<TDim>::CalculateLocalSystem(
 //***********************************************************************************
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::CalculateRightHandSide(VectorType& rRightHandSideVector, const ProcessInfo& rCurrentProcessInfo )
+void SpringDamperElement<TDim>::CalculateRightHandSide(VectorType& rRightHandSideVector,
+                                                       const ProcessInfo& rProcessInfo)
 {
-    this->ConstCalculateRightHandSide(rRightHandSideVector);
+    this->ConstCalculateRightHandSide(rRightHandSideVector, rProcessInfo);
 }
 
 //***********************************************************************************
 //***********************************************************************************
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::CalculateLeftHandSide( MatrixType& rLeftHandSideMatrix, const ProcessInfo& rCurrentProcessInfo )
+void SpringDamperElement<TDim>::CalculateLeftHandSide(MatrixType& rLeftHandSideMatrix, const ProcessInfo& rProcessInfo)
 {
-    this->ConstCalculateLeftHandSide(rLeftHandSideMatrix);
+    this->ConstCalculateLeftHandSide(rLeftHandSideMatrix, rProcessInfo);
 }
 
 //************************************************************************************
 //************************************************************************************
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::CalculateMassMatrix( MatrixType& rMassMatrix, const ProcessInfo& rCurrentProcessInfo )
+void SpringDamperElement<TDim>::CalculateMassMatrix(MatrixType& rMassMatrix,
+                                                    const ProcessInfo& rCurrentProcessInfo)
 {
     KRATOS_TRY
 
@@ -334,17 +354,19 @@ void SpringDamperElement<TDim>::CalculateMassMatrix( MatrixType& rMassMatrix, co
 //************************************************************************************
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::CalculateDampingMatrix( MatrixType& rDampingMatrix, const ProcessInfo& rCurrentProcessInfo )
+void SpringDamperElement<TDim>::CalculateDampingMatrix(MatrixType& rDampingMatrix,
+                                                       const ProcessInfo& rProcessInfo)
 {
     KRATOS_TRY;
 
-    this->ConstCalculateDampingMatrix(rDampingMatrix);
+    this->ConstCalculateDampingMatrix(rDampingMatrix, rProcessInfo);
 
     KRATOS_CATCH( "" );
 }
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::ConstCalculateDampingMatrix(MatrixType& rDampingMatrix) const
+void SpringDamperElement<TDim>::ConstCalculateDampingMatrix(MatrixType& rDampingMatrix,
+                                                            const ProcessInfo& rProcessInfo) const
 {
     KRATOS_TRY;
 
@@ -390,23 +412,26 @@ void SpringDamperElement<TDim>::ConstCalculateDampingMatrix(MatrixType& rDamping
 
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::ConstCalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector) const
+void SpringDamperElement<TDim>::ConstCalculateLocalSystem(MatrixType& rLeftHandSideMatrix,
+                                                          VectorType& rRightHandSideVector,
+                                                          const ProcessInfo& rProcessInfo) const
 {
     KRATOS_TRY;
 
     /* Calculate elemental system */
     // Compute RHS (RHS = rRightHandSideVector = Fext - Fint)
-    this->ConstCalculateRightHandSide(rRightHandSideVector);
+    this->ConstCalculateRightHandSide(rRightHandSideVector, rProcessInfo);
 
     // Compute LHS
-    this->ConstCalculateLeftHandSide(rLeftHandSideMatrix);
+    this->ConstCalculateLeftHandSide(rLeftHandSideMatrix, rProcessInfo);
 
     KRATOS_CATCH("");
 }
 
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::ConstCalculateLeftHandSide(MatrixType& rLeftHandSideMatrix) const
+void SpringDamperElement<TDim>::ConstCalculateLeftHandSide(MatrixType& rLeftHandSideMatrix,
+                                                           const ProcessInfo& rProcessInfo) const
 {
     KRATOS_TRY;
     // Resizing the LHS
@@ -418,40 +443,76 @@ void SpringDamperElement<TDim>::ConstCalculateLeftHandSide(MatrixType& rLeftHand
 
     noalias(rLeftHandSideMatrix) = ZeroMatrix(system_size, system_size); //resetting LHS
 
-    // elemental_stiffness: kx, ky, kz, cpx, cpy, cpz
-    array_1d<double, msLocalSize > elemental_stiffness = ZeroVector(msLocalSize);
+    const Matrix& r_shape_functions = this->GetGeometry().ShapeFunctionsValues(GeometryData::IntegrationMethod::GI_GAUSS_1);
 
-    const array_1d<double, 3>& nodal_stiffness = this->GetValue(NODAL_DISPLACEMENT_STIFFNESS);
-    const array_1d<double, 3>& nodal_rot_stiffness = this->GetValue(NODAL_ROTATIONAL_STIFFNESS);
-
-    if constexpr (TDim == 2) {
-
-        elemental_stiffness[0] = nodal_stiffness[0];
-        elemental_stiffness[1] = nodal_stiffness[1];
-        elemental_stiffness[2] = nodal_rot_stiffness[2];
-
-    }
-    else if constexpr (TDim == 3) {
-        elemental_stiffness[0] = nodal_stiffness[0];
-        elemental_stiffness[1] = nodal_stiffness[1];
-        elemental_stiffness[2] = nodal_stiffness[2];
-
-        elemental_stiffness[3] = nodal_rot_stiffness[0];
-        elemental_stiffness[4] = nodal_rot_stiffness[1];
-        elemental_stiffness[5] = nodal_rot_stiffness[2];
-    }
+    const array_1d<double,6> nodal_stiffnesses {
+        this->GetProperties().GetValue(NODAL_DISPLACEMENT_STIFFNESS_X,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo),
+        this->GetProperties().GetValue(NODAL_DISPLACEMENT_STIFFNESS_Y,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo),
+        this->GetProperties().GetValue(NODAL_DISPLACEMENT_STIFFNESS_Z,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo),
+        this->GetProperties().GetValue(NODAL_ROTATIONAL_STIFFNESS_X,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo),
+        this->GetProperties().GetValue(NODAL_ROTATIONAL_STIFFNESS_Y,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo),
+        this->GetProperties().GetValue(NODAL_ROTATIONAL_STIFFNESS_Z,
+                                       this->GetGeometry(),
+                                       row(r_shape_functions, 0),
+                                       rProcessInfo)
+    };
 
     for (std::size_t i = 0; i < msLocalSize; ++i) {
-        rLeftHandSideMatrix(i, i) += elemental_stiffness[i];
-        rLeftHandSideMatrix(i + msLocalSize, i + msLocalSize) += elemental_stiffness[i];
-        rLeftHandSideMatrix(i, i + msLocalSize) -= elemental_stiffness[i];
-        rLeftHandSideMatrix(i + msLocalSize, i) -= elemental_stiffness[i];
+        rLeftHandSideMatrix(i, i) = nodal_stiffnesses[i];
+        rLeftHandSideMatrix(i + msLocalSize, i + msLocalSize) = nodal_stiffnesses[i];
+        rLeftHandSideMatrix(i, i + msLocalSize) = -nodal_stiffnesses[i];
+        rLeftHandSideMatrix(i + msLocalSize, i) = -nodal_stiffnesses[i];
     }
+
+    const double length = StructuralMechanicsElementUtilities::CalculateReferenceLength3D2N(*this);
+
+    rLeftHandSideMatrix( 1, 5 ) += -nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix( 5, 1 ) += -nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix( 1, 11) += -nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix(11, 1 ) += -nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix( 5, 7 ) +=  nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix( 7, 5 ) +=  nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix( 7, 11) +=  nodal_stiffnesses[2] / 2.0 * length;
+    rLeftHandSideMatrix(11, 7 ) +=  nodal_stiffnesses[2] / 2.0 * length;
+
+    rLeftHandSideMatrix( 5, 5 ) += nodal_stiffnesses[1] / 4.0 * length * length;
+    rLeftHandSideMatrix( 5, 11) += nodal_stiffnesses[1] / 4.0 * length * length;
+    rLeftHandSideMatrix(11, 5 ) += nodal_stiffnesses[1] / 4.0 * length * length;
+    rLeftHandSideMatrix(11, 11) += nodal_stiffnesses[1] / 4.0 * length * length;
+
+    {
+        std::ofstream matrix_file("element_matrix.mm");
+        matrix_file << R"(%%MatrixMarket matrix array real general)" << '\n';
+        matrix_file << rLeftHandSideMatrix.size1() << ' ' << rLeftHandSideMatrix.size2() << '\n';
+        for (unsigned i_row=0u; i_row<rLeftHandSideMatrix.size1(); ++i_row) {
+            for (unsigned i_column=0u; i_column<rLeftHandSideMatrix.size2(); ++i_column) {
+                matrix_file << rLeftHandSideMatrix(i_row, i_column) << '\n';
+            }
+        }
+        matrix_file << '\n';
+    }
+
     KRATOS_CATCH("");
 }
 
 template<std::size_t TDim>
-void SpringDamperElement<TDim>::ConstCalculateRightHandSide(VectorType& rRightHandSideVector) const
+void SpringDamperElement<TDim>::ConstCalculateRightHandSide(VectorType& rRightHandSideVector,
+                                                            const ProcessInfo& rProcessInfo) const
 {
     KRATOS_TRY
 
@@ -461,65 +522,77 @@ void SpringDamperElement<TDim>::ConstCalculateRightHandSide(VectorType& rRightHa
 
     rRightHandSideVector = ZeroVector(msElementSize); //resetting RHS
 
-    array_1d<double, msElementSize > current_displacement = ZeroVector(msElementSize);
-    array_1d<double, msLocalSize> elemental_stiffness = ZeroVector(msLocalSize);
+    std::pair<Vector,Vector> nodal_shape_functions;
 
-    // Getting actual values
-    const array_1d<double, 3>& nodal_stiffness = this->GetValue(NODAL_DISPLACEMENT_STIFFNESS);
-    const array_1d<double, 3>& nodal_rot_stiffness = this->GetValue(NODAL_ROTATIONAL_STIFFNESS);
+    nodal_shape_functions.first.resize(2);
+    nodal_shape_functions.first[0] = 1.0;
+    nodal_shape_functions.first[1] = 0.0;
 
-    if constexpr (TDim == 2) {
-        elemental_stiffness[0] = nodal_stiffness[0];
-        elemental_stiffness[1] = nodal_stiffness[1];
+    nodal_shape_functions.second.resize(2);
+    nodal_shape_functions.second[0] = 0.0;
+    nodal_shape_functions.second[1] = 1.0;
 
-        elemental_stiffness[2] = nodal_rot_stiffness[2];
-    }
-    else if constexpr (TDim == 3) {
-        elemental_stiffness[0] = nodal_stiffness[0];
-        elemental_stiffness[1] = nodal_stiffness[1];
-        elemental_stiffness[2] = nodal_stiffness[2];
+    const array_1d<double,12> reactions {
+        this->GetProperties().GetValue(POINT_LOAD_X,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_LOAD_Y,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_LOAD_Z,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_X,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_Y,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_Z,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.first,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_LOAD_X,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_LOAD_Y,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_LOAD_Z,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_X,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_Y,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo),
+        this->GetProperties().GetValue(POINT_MOMENT_Z,
+                                       this->GetGeometry(),
+                                       nodal_shape_functions.second,
+                                       rProcessInfo)
+    };
 
-        elemental_stiffness[3] = nodal_rot_stiffness[0];
-        elemental_stiffness[4] = nodal_rot_stiffness[1];
-        elemental_stiffness[5] = nodal_rot_stiffness[2];
-    }
+    std::transform(reactions.begin(),
+                   reactions.end(),
+                   rRightHandSideVector.begin(),
+                   [](const auto reaction) {return -reaction;});
 
-    // Getting geometry
-    auto& r_geometry = this->GetGeometry();
-
-    // Getting values
-    const array_1d<double, 3> ddisp = r_geometry[1].FastGetSolutionStepValue(DISPLACEMENT)
-        - r_geometry[0].FastGetSolutionStepValue(DISPLACEMENT);
-
-    const array_1d<double, 3> drot = r_geometry[1].FastGetSolutionStepValue(ROTATION)
-        - r_geometry[0].FastGetSolutionStepValue(ROTATION);
-
-    if constexpr (TDim == 2) {
-        current_displacement[0] = -ddisp[0];
-        current_displacement[1] = -ddisp[1];
-        current_displacement[2] = -drot[2];
-        current_displacement[3] = ddisp[0];
-        current_displacement[4] = ddisp[1];
-        current_displacement[5] = drot[2];
-    }
-    else if constexpr (TDim == 3) {
-        current_displacement[0] = -ddisp[0];
-        current_displacement[1] = -ddisp[1];
-        current_displacement[2] = -ddisp[2];
-        current_displacement[3] = -drot[0];
-        current_displacement[4] = -drot[1];
-        current_displacement[5] = -drot[2];
-        current_displacement[6] = ddisp[0];
-        current_displacement[7] = ddisp[1];
-        current_displacement[8] = ddisp[2];
-        current_displacement[9] = drot[0];
-        current_displacement[10] = drot[1];
-        current_displacement[11] = drot[2];
-    }
-
-    for (std::size_t i = 0; i < msElementSize; ++i) {
-        rRightHandSideVector[i] -= elemental_stiffness[i % msLocalSize] * current_displacement[i];
-    }
+    //const double length = StructuralMechanicsElementUtilities::CalculateReferenceLength3D2N(*this);
+    //rRightHandSideVector[5 ] -= length * reactions[7 ];
+    //rRightHandSideVector[11] += length * reactions[1 ];
+    //rRightHandSideVector[5 ] += reactions[11];
+    //rRightHandSideVector[11] += reactions[5 ];
     KRATOS_CATCH("");
 }
 

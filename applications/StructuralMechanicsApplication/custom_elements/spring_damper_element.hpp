@@ -137,6 +137,8 @@ public:
 
     //************* COMPUTING  METHODS
 
+    void InitializeNonLinearIteration(const ProcessInfo& rProcessInfo) override;
+
     /**
      * this is called during the assembling process in order
      * to calculate all elemental contributions to the global system
@@ -259,15 +261,20 @@ private:
     ///@name Private Operations
     ///@{
 
-    void ConstCalculateDampingMatrix(MatrixType& rDampingMatrix) const;
+    void ConstCalculateDampingMatrix(MatrixType& rDampingMatrix,
+                                     const ProcessInfo& rProcessInfo) const;
 
-    void ConstCalculateLocalSystem(MatrixType& rLeftHandSideMatrix, VectorType& rRightHandSideVector) const;
+    void ConstCalculateLocalSystem(MatrixType& rLeftHandSideMatrix,
+                                   VectorType& rRightHandSideVector,
+                                   const ProcessInfo& rProcessInfo) const;
 
-    void ConstCalculateLeftHandSide(MatrixType& rLeftHandSideMatrix) const;
+    void ConstCalculateLeftHandSide(MatrixType& rLeftHandSideMatrix,
+                                    const ProcessInfo& rProcessInfo) const;
 
-    void ConstCalculateRightHandSide(VectorType& rRightHandSideVector) const;
+    void ConstCalculateRightHandSide(VectorType& rRightHandSideVector,
+                                     const ProcessInfo& rProcessInfo) const;
 
-    
+
     ///@}
     ///@name Private  Access
     ///@{

@@ -81,7 +81,7 @@ void TableAccessor::save(Serializer& rSerializer) const
 {
     rSerializer.save("InputVariable", mpInputVariable->Name());
     // // we must do the int cast to be able to compile
-    rSerializer.save("InputVariableType", static_cast<int>(mInputVariableType)); 
+    rSerializer.save("InputVariableType", static_cast<int>(mInputVariableType));
 }
 void TableAccessor::load(Serializer& rSerializer)
 {
