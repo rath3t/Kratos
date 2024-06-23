@@ -445,7 +445,7 @@ void SpringDamperElement<TDim>::ConstCalculateLeftHandSide(MatrixType& rLeftHand
 
     const Matrix& r_shape_functions = this->GetGeometry().ShapeFunctionsValues(GeometryData::IntegrationMethod::GI_GAUSS_1);
 
-    const array_1d<double,6> nodal_stiffnesses {
+    const array_1d<double,6> stiffness {
         this->GetProperties().GetValue(NODAL_DISPLACEMENT_STIFFNESS_X,
                                        this->GetGeometry(),
                                        row(r_shape_functions, 0),
@@ -472,47 +472,48 @@ void SpringDamperElement<TDim>::ConstCalculateLeftHandSide(MatrixType& rLeftHand
                                        rProcessInfo)
     };
 
-    for (std::size_t i = 0; i < msLocalSize; ++i) {
-        rLeftHandSideMatrix(i              , i              ) = nodal_stiffnesses[i];
-        rLeftHandSideMatrix(i + msLocalSize, i + msLocalSize) = nodal_stiffnesses[i];
-        rLeftHandSideMatrix(i              , i + msLocalSize) = -nodal_stiffnesses[i];
-        rLeftHandSideMatrix(i + msLocalSize, i              ) = -nodal_stiffnesses[i];
-    }
+    const double l = GetGeometry().Length();
 
-    const double length = GetGeometry().Length();
-
-    // k_y
-    rLeftHandSideMatrix(1 ,5)  += nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(1 ,11) += nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(7 ,5)  -= nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(7 ,11) -= nodal_stiffnesses[1] / 2.0 * length;
-
-    rLeftHandSideMatrix(5 ,1)  += nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(11 ,1) += nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(5 ,7)  -= nodal_stiffnesses[1] / 2.0 * length;
-    rLeftHandSideMatrix(11 ,7) -= nodal_stiffnesses[1] / 2.0 * length;
-
-    // k_z
-    rLeftHandSideMatrix(2 ,4)  += nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(2 ,10) += nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(8 ,4)  -= nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(8 ,10) -= nodal_stiffnesses[2] / 2.0 * length;
-
-    rLeftHandSideMatrix(4 ,2)  += nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(10 ,2) += nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(4 ,8)  -= nodal_stiffnesses[2] / 2.0 * length;
-    rLeftHandSideMatrix(10 ,8) -= nodal_stiffnesses[2] / 2.0 * length;
-
-    //rotation
-    rLeftHandSideMatrix(4 ,4)   += nodal_stiffnesses[2] / 4.0 * length * length;
-    rLeftHandSideMatrix(10 ,10) += nodal_stiffnesses[2] / 4.0 * length * length;
-    rLeftHandSideMatrix(4 ,10)  += nodal_stiffnesses[2] / 4.0 * length * length;
-    rLeftHandSideMatrix(10 ,4)  += nodal_stiffnesses[2] / 4.0 * length * length;
-
-    rLeftHandSideMatrix(5 ,5)   += nodal_stiffnesses[1] / 4.0 * length * length;
-    rLeftHandSideMatrix(11 ,11) += nodal_stiffnesses[1] / 4.0 * length * length;
-    rLeftHandSideMatrix(5 ,11)  += nodal_stiffnesses[1] / 4.0 * length * length;
-    rLeftHandSideMatrix(11 ,5)  += nodal_stiffnesses[1] / 4.0 * length * length;
+    rLeftHandSideMatrix( 0,  0) = stiffness[0];
+    rLeftHandSideMatrix( 0,  6) = -stiffness[0];
+    rLeftHandSideMatrix( 1,  1) = stiffness[1];
+    rLeftHandSideMatrix( 1,  5) = 0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 1,  7) = -stiffness[1];
+    rLeftHandSideMatrix( 1, 11) = 0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 2,  2) = stiffness[2];
+    rLeftHandSideMatrix( 2,  4) = -0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 2,  8) = -stiffness[2];
+    rLeftHandSideMatrix( 2, 10) = -0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 3,  3) = stiffness[3];
+    rLeftHandSideMatrix( 3,  9) = -stiffness[3];
+    rLeftHandSideMatrix( 4,  2) = -0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 4,  4) = stiffness[4] + 0.25 * stiffness[2] * l * l;
+    rLeftHandSideMatrix( 4,  8) = 0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 4, 10) = -stiffness[4] + 0.25 * stiffness[2] * l * l;
+    rLeftHandSideMatrix( 5,  1) = 0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 5,  5) = stiffness[5] + 0.25 * stiffness[1] * l * l;
+    rLeftHandSideMatrix( 5,  7) = -0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 5, 11) = -stiffness[5] + 0.25 * stiffness[1] * l * l;
+    rLeftHandSideMatrix( 6,  0) = -stiffness[0];
+    rLeftHandSideMatrix( 6,  6) = stiffness[0];
+    rLeftHandSideMatrix( 7,  1) = -stiffness[1];
+    rLeftHandSideMatrix( 7,  5) = -0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 7,  7) = stiffness[1];
+    rLeftHandSideMatrix( 7, 11) = -0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix( 8,  2) = -stiffness[2];
+    rLeftHandSideMatrix( 8,  4) = 0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 8,  8) = stiffness[2];
+    rLeftHandSideMatrix( 8, 10) = 0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix( 9,  3) = -stiffness[3];
+    rLeftHandSideMatrix( 9,  9) = stiffness[3];
+    rLeftHandSideMatrix(10,  2) = -0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix(10,  4) = -stiffness[4] + 0.25 * stiffness[2] * l * l;
+    rLeftHandSideMatrix(10,  8) = 0.5 * stiffness[2] * l;
+    rLeftHandSideMatrix(10, 10) = stiffness[4] + 0.25 * stiffness[2] * l * l;
+    rLeftHandSideMatrix(11,  1) = 0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix(11,  5) = -stiffness[5] + 0.25 * stiffness[1] * l * l;
+    rLeftHandSideMatrix(11,  7) = -0.5 * stiffness[1] * l;
+    rLeftHandSideMatrix(11, 11) = stiffness[5] + 0.25 * stiffness[1] * l * l;
 
     KRATOS_CATCH("");
 }
