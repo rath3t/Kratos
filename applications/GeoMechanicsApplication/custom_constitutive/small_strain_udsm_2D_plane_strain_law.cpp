@@ -80,6 +80,7 @@ void SmallStrainUDSM2DPlaneStrainLaw::CopyConstitutiveMatrix(ConstitutiveLaw::Pa
             }
         }
     }
+    KRATOS_INFO("CopyConstitutiveMatrix C") << rConstitutiveMatrix << std::endl;
 
     KRATOS_CATCH("")
 }

@@ -125,10 +125,13 @@ void UPwBaseElement::Initialize(const ProcessInfo& rCurrentProcessInfo)
     const auto& r_properties = this->GetProperties();
     const auto& r_geometry   = this->GetGeometry();
     const auto number_of_integration_points = r_geometry.IntegrationPointsNumber(mThisIntegrationMethod);
+    KRATOS_INFO("UPwBaseElement::Initialize") << "Number of integration points = " << number_of_integration_points << std::endl;
 
     mConstitutiveLawVector.resize(number_of_integration_points);
     for (unsigned int i = 0; i < mConstitutiveLawVector.size(); ++i) {
+        KRATOS_INFO("UPwBaseElement::Initialize") << "Constitutive law: " << r_properties[CONSTITUTIVE_LAW]->Info() << std::endl;
         mConstitutiveLawVector[i] = r_properties[CONSTITUTIVE_LAW]->Clone();
+        KRATOS_INFO("UPwBaseElement::Initialize") << "Cloned constitutive law: " << mConstitutiveLawVector[i]->Info() << std::endl;
         mConstitutiveLawVector[i]->InitializeMaterial(
             r_properties, r_geometry, row(r_geometry.ShapeFunctionsValues(mThisIntegrationMethod), i));
     }
@@ -346,6 +349,8 @@ void UPwBaseElement::CalculateOnIntegrationPoints(const Variable<ConstitutiveLaw
                                                   const ProcessInfo& rCurrentProcessInfo)
 {
     KRATOS_TRY
+
+    KRATOS_INFO("UPwBaseElement::CalculateOnIntegrationPoints") << "Komen we hier langs??" << std::endl;
 
     if (rVariable == CONSTITUTIVE_LAW) {
         rValues.resize(mConstitutiveLawVector.size());

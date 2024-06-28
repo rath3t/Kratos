@@ -84,6 +84,8 @@ public:
      */
     bool& GetValue(const Variable<bool>& rThisVariable, bool& rValue) override;
     using ConstitutiveLaw::GetValue;
+    std::string Info() const override {return "GeoLinearElasticPlaneStrain2DLaw";}
+
 
 protected:
     /**

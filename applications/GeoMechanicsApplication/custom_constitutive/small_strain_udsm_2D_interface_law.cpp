@@ -30,12 +30,14 @@ void SmallStrainUDSM2DInterfaceLaw::UpdateInternalDeltaStrainVector(Constitutive
 
     mDeltaStrainVector[INDEX_3D_ZZ] = rStrainVector(INDEX_2D_INTERFACE_ZZ) - mStrainVectorFinalized[INDEX_3D_ZZ];
     mDeltaStrainVector[INDEX_3D_XZ] = rStrainVector(INDEX_2D_INTERFACE_XZ) - mStrainVectorFinalized[INDEX_3D_XZ];
+    KRATOS_INFO("SmallStrainUDSM2DInterfaceLaw::UpdateInternalDeltaStrainVector") << "mDeltaStrainVector = " << mDeltaStrainVector << std::endl;
 }
 
 void SmallStrainUDSM2DInterfaceLaw::SetExternalStressVector(Vector& rStressVector)
 {
     rStressVector(INDEX_2D_INTERFACE_ZZ) = mStressVector[INDEX_3D_ZZ];
     rStressVector(INDEX_2D_INTERFACE_XZ) = mStressVector[INDEX_3D_XZ];
+    KRATOS_INFO("SmallStrainUDSM2DInterfaceLaw::SetExternalStressVector") << "rStressVector = " << rStressVector << std::endl;
 }
 
 void SmallStrainUDSM2DInterfaceLaw::SetInternalStressVector(const Vector& rStressVector)
@@ -76,6 +78,7 @@ void SmallStrainUDSM2DInterfaceLaw::CopyConstitutiveMatrix(ConstitutiveLaw::Para
             }
         }
     }
+    KRATOS_INFO("CopyConstitutiveMatrix C") << rConstitutiveMatrix << std::endl;
 }
 
 indexStress3D SmallStrainUDSM2DInterfaceLaw::getIndex3D(const indexStress2DInterface index2D) const

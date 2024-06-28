@@ -7,11 +7,17 @@
               "name"             :  "GeoLinearElasticPlaneStrain2DLaw" 
           },
           "Variables": {
-              "YOUNG_MODULUS"    :  20000,
-              "POISSON_RATIO"    :  0.2,
-              "DENSITY_SOLID"    :  2.0e3,
-              "POROSITY"         :  0.0,
-              "THICKNESS"        :  1.0
+              "IGNORE_UNDRAINED"         :  true,
+              "BIOT_COEFFICIENT"         :  1.0,
+              "YOUNG_MODULUS"            :  20000,
+              "POISSON_RATIO"            :  0.2,
+              "DENSITY_SOLID"            :  0.0,
+              "DENSITY_WATER"            :  0.03,
+              "POROSITY"                 :  0.0,
+              "BULK_MODULUS_SOLID"       :  1.0,
+              "BULK_MODULUS_FLUID"       :  1.0,
+              "RETENTION_LAW"            :  "SaturatedLaw",
+              "SATURATED_SATURATION"     :  1.0
          },
          "Tables": {}
       }
@@ -23,11 +29,17 @@
               "name"             :  "GeoLinearElasticPlaneStrain2DLaw" 
           },
           "Variables": {
-              "YOUNG_MODULUS"    :  20000,
-              "POISSON_RATIO"    :  0.2,
-              "DENSITY_SOLID"    :  2.0e3,
-              "POROSITY"         :  0.0,
-              "THICKNESS"        :  1.0
+              "IGNORE_UNDRAINED"         :  true,
+              "BIOT_COEFFICIENT"         :  1.0,
+              "YOUNG_MODULUS"            :  20000,
+              "POISSON_RATIO"            :  0.2,
+              "DENSITY_SOLID"            :  0.0,
+              "DENSITY_WATER"            :  0.03,
+              "POROSITY"                 :  0.0,
+              "BULK_MODULUS_SOLID"       :  1.0,
+              "BULK_MODULUS_FLUID"       :  1.0,
+              "RETENTION_LAW"            :  "SaturatedLaw",
+              "SATURATED_SATURATION"     :  1.0
          },
          "Tables": {}
       }

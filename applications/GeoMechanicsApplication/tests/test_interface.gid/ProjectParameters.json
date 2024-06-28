@@ -3,7 +3,7 @@
         "problem_name":         "test_interface",
         "start_time":           0.0,
         "end_time":             1.0,
-        "echo_level":           10,
+        "echo_level":           1,
         "parallel_type":        "OpenMP",
         "number_of_threads":    1
     },
@@ -22,7 +22,7 @@
             "time_step":            0.25
         },
         "buffer_size":                        2,
-        "echo_level":                         10,
+        "echo_level":                         1,
         "clear_storage":                      false,
         "compute_reactions":                  false,
         "move_mesh_flag":                     false,
@@ -42,9 +42,9 @@
         "displacement_absolute_tolerance":    1.0E-9,
         "residual_relative_tolerance":        1.0E-4,
         "residual_absolute_tolerance":        1.0E-9,
-        "min_iterations":                      6,
-        "max_iterations":                      15,
-        "number_cycles":                      100,
+        "min_iterations":                     6,
+        "max_iterations":                     15,
+        "number_cycles":                      1,
         "reduction_factor":                   0.5,
         "increase_factor":                    2.0,
         "desired_iterations":                 4,
@@ -59,14 +59,8 @@
         "line_search_tolerance":              0.5,
         "rotation_dofs":                      true,
         "linear_solver_settings":             {
-            "solver_type":     "amgcl",
-            "smoother_type":   "ilu0",
-            "krylov_type":     "gmres",
-            "coarsening_type": "aggregation",
-            "max_iteration":   100,
-            "verbosity":       0,
-            "tolerance":       1.0e-6,
-            "scaling":         false
+            "solver_type":   "LinearSolversApplication.sparse_lu",
+            "scaling":       true
         },
         "problem_domain_sub_model_part_list": ["bottom","top","Interface-auto-1"],
         "processes_sub_model_part_list":      ["Solid_Displacement-auto-1","Solid_Displacement-auto-2","Solid_Displacement-auto-3","moving"],
@@ -85,7 +79,7 @@
                         "gidpost_flags":       {
                             "WriteDeformedMeshFlag": "WriteUndeformed",
                             "WriteConditionsFlag":   "WriteElementsOnly",
-                            "GiDPostMode":           "GiD_PostBinary",
+                            "GiDPostMode":           "GiD_PostAscii",
                             "MultiFileFlag":         "SingleFile"
                         },
                         "file_label":          "step",
@@ -96,7 +90,16 @@
                         "skin_output":         false,
                         "plane_output":        [],
                         "nodal_results":       ["DISPLACEMENT","WATER_PRESSURE"],
-                        "gauss_point_results": ["GREEN_LAGRANGE_STRAIN_TENSOR","CAUCHY_STRESS_TENSOR","TOTAL_STRESS_TENSOR","VON_MISES_STRESS","FLUID_FLUX_VECTOR"]
+                        "gauss_point_results": [
+				"GREEN_LAGRANGE_STRAIN_TENSOR",
+				"CAUCHY_STRESS_TENSOR",
+				"TOTAL_STRESS_TENSOR",
+				"VON_MISES_STRESS",
+				"FLUID_FLUX_VECTOR",
+				"LOCAL_FLUID_FLUX_VECTOR",
+				"LOCAL_STRESS_VECTOR",
+                                "LOCAL_RELATIVE_DISPLACEMENT_VECTOR"
+                         ]
                     },
                     "point_data_configuration":  []
                 }

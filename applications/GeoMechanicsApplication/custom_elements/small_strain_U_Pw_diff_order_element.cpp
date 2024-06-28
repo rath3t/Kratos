@@ -246,7 +246,9 @@ void SmallStrainUPwDiffOrderElement::InitializeSolutionStep(const ProcessInfo& r
         this->CalculateKinematics(Variables, GPoint);
         Variables.B            = b_matrices[GPoint];
         Variables.F            = deformation_gradients[GPoint];
-        Variables.StrainVector = strain_vectors[GPoint];
+        //Variables.StrainVector = strain_vectors[GPoint];
+        // Netheidshalve moet ook F en detF op maagdelijk. De initialisatie maakt anders Dirichlet belastingen ongedaan.
+        Variables.StrainVector = ZeroVector(strain_vectors[GPoint].size());
 
         ConstitutiveLawUtilities::SetConstitutiveParameters(
             ConstitutiveParameters, Variables.StrainVector, Variables.ConstitutiveMatrix, Variables.Nu,

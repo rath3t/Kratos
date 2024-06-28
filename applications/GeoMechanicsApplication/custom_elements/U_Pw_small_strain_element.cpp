@@ -161,7 +161,9 @@ void UPwSmallStrainElement<TDim, TNumNodes>::InitializeSolutionStep(const Proces
         this->CalculateKinematics(Variables, GPoint);
         Variables.B            = b_matrices[GPoint];
         Variables.F            = deformation_gradients[GPoint];
-        Variables.StrainVector = strain_vectors[GPoint];
+        //Variables.StrainVector = strain_vectors[GPoint];
+        // Netheidshalve moet ook F en detF op maagdelijk. De initialisatie maakt anders Dirichlet belastingen ongedaan.
+        Variables.StrainVector = ZeroVector(strain_vectors[GPoint].size());
 
         ConstitutiveLawUtilities::SetConstitutiveParameters(
             ConstitutiveParameters, Variables.StrainVector, Variables.ConstitutiveMatrix, Variables.Np,
@@ -916,6 +918,8 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
     const auto integration_coefficients_on_initial_configuration =
         this->CalculateIntegrationCoefficients(IntegrationPoints, det_Js_initial_configuration);
 
+    KRATOS_INFO("UPwSmallStrainElement::CalculateAll") << "integration_coefficients = " << integration_coefficients << std::endl;
+
     const auto deformation_gradients = CalculateDeformationGradients();
     auto       strain_vectors        = StressStrainUtilities::CalculateStrains(
         deformation_gradients, b_matrices, Variables.DisplacementVector, Variables.UseHenckyStrain,
@@ -964,11 +968,12 @@ void UPwSmallStrainElement<TDim, TNumNodes>::CalculateAll(MatrixType&        rLe
 
         // Contributions to the left hand side
         if (CalculateStiffnessMatrixFlag) this->CalculateAndAddLHS(rLeftHandSideMatrix, Variables);
-
+        KRATOS_INFO("UPwSmallStrainElement::CalculateAl") << "Variables.ConstitutiveMatrix = " << Variables.ConstitutiveMatrix << std::endl;
         // Contributions to the right hand side
         if (CalculateResidualVectorFlag)
             this->CalculateAndAddRHS(rRightHandSideVector, Variables, GPoint);
     }
+    KRATOS_INFO("UPwSmallStrainElement::CalculateAl") << "K continuum = " << rLeftHandSideMatrix << std::endl;
 
     KRATOS_CATCH("")
 }

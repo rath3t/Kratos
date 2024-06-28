@@ -90,7 +90,7 @@ Begin Nodes
 End Nodes
 
 
-Begin Elements SmallDisplacementElement2D3N
+Begin Elements UPwSmallStrainElement2D3N
   49  1  56 52 60
   50  1  35 30 44
   51  1  20 17 34
@@ -141,7 +141,7 @@ Begin Elements SmallDisplacementElement2D3N
   96  1  62 63 70
 End Elements
 
-Begin Elements SmallDisplacementElement2D3N
+Begin Elements UPwSmallStrainElement2D3N
   1  2  18 21 12
   2  2  31 36 22
   3  2  53 57 50

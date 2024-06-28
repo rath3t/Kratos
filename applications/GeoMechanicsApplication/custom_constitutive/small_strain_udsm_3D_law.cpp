@@ -592,17 +592,20 @@ void SmallStrainUDSM3DLaw::CalculateMaterialResponseCauchy(ConstitutiveLaw::Para
     if (rOptions.IsNot(ConstitutiveLaw::USE_ELEMENT_PROVIDED_STRAIN)) {
         Vector& rStrainVector = rValues.GetStrainVector();
         CalculateCauchyGreenStrain(rValues, rStrainVector);
+        KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateMaterialResponseCauchy") << "A strain = " << rStrainVector << std::endl;
     }
 
     if (rOptions.Is(ConstitutiveLaw::COMPUTE_CONSTITUTIVE_TENSOR)) {
         // Constitutive matrix (D matrix)
         Matrix& rConstitutiveMatrix = rValues.GetConstitutiveMatrix();
         CalculateConstitutiveMatrix(rValues, rConstitutiveMatrix);
+        KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateMaterialResponseCauchy") << "B constitutive matrix = " << rConstitutiveMatrix << std::endl;
     }
 
     if (rOptions.Is(ConstitutiveLaw::COMPUTE_STRESS)) {
         Vector& rStressVector = rValues.GetStressVector();
         CalculateStress(rValues, rStressVector);
+        KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateMaterialResponseCauchy") << "C stress = " << rStressVector << std::endl;
     }
 
     KRATOS_CATCH("")
@@ -660,11 +663,13 @@ void SmallStrainUDSM3DLaw::CalculateConstitutiveMatrix(ConstitutiveLaw::Paramete
     KRATOS_TRY
     // update strain vector
     UpdateInternalDeltaStrainVector(rValues);
+    KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateConstitutiveMatrix") << "Voor CallUDSM strain incr. = " << mDeltaStrainVector << std::endl;
 
     int IDTask = MATRIX_ELASTO_PLASTIC;
     CallUDSM(&IDTask, rValues);
 
     CopyConstitutiveMatrix(rValues, rConstitutiveMatrix);
+    KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateConstitutive") << "Na CallUDSM matrix = " << rConstitutiveMatrix << std::endl;
 
     KRATOS_CATCH("")
 }
@@ -674,11 +679,13 @@ void SmallStrainUDSM3DLaw::CalculateStress(ConstitutiveLaw::Parameters& rValues,
     KRATOS_TRY
     // update strain vector
     UpdateInternalDeltaStrainVector(rValues);
+    KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateStress") << "Voor CallUDSM strain incr. = " << mDeltaStrainVector << std::endl;
 
     int IDTask = STRESS_CALCULATION;
     CallUDSM(&IDTask, rValues);
 
     SetExternalStressVector(rStressVector);
+    KRATOS_INFO("SmallStrainUDSM3DLaw::CalculateStress") << "Na CallUDSM sig = " << rStressVector << std::endl;
     KRATOS_CATCH("")
 }
 
@@ -716,6 +723,40 @@ void SmallStrainUDSM3DLaw::CallUDSM(int* pIDTask, ConstitutiveLaw::Parameters& r
     auto nSizeProjectDirectory = static_cast<int>(mProjectDirectory.size());
 
     const auto& MaterialParameters = rMaterialProperties[UMAT_PARAMETERS];
+    KRATOS_INFO("Voor pUserMod") << "pIDTask = " << *pIDTask << std::endl;
+    KRATOS_INFO("modelNumber")              << modelNumber << std::endl;
+    KRATOS_INFO("isUndr")                   << isUndr << std::endl;
+    KRATOS_INFO("iStep")                    << iStep << std::endl;
+    KRATOS_INFO("Iteration")                << iteration << std::endl;
+    KRATOS_INFO("iElement")                 << iElement << std::endl;
+    KRATOS_INFO("integrationNumber")        << integrationNumber << std::endl;
+    KRATOS_INFO("position") << Xorigin << ", " << Yorigin << ", " << Zorigin << std::endl;
+    KRATOS_INFO("t, dt")    << time << ", " << deltaTime << std::endl;
+    KRATOS_INFO("MaterialParameters")       << MaterialParameters << std::endl;
+    KRATOS_INFO("mStressVectorFinalized  ") << mStressVectorFinalized << std::endl;
+    KRATOS_INFO("excessPorePressurePrevious") << excessPorePressurePrevious << std::endl;
+    KRATOS_INFO("mStateVariablesFinalized")    << mStateVariablesFinalized << std::endl;
+    KRATOS_INFO("mDeltaStrainVector")       << mDeltaStrainVector << std::endl;
+    auto my_C = Matrix(VOIGT_SIZE_3D,VOIGT_SIZE_3D);
+    for (auto i = 0; i < VOIGT_SIZE_3D; ++i) {
+        for (auto j = 0; j < VOIGT_SIZE_3D; ++j) {
+            my_C(i,j) = mMatrixD[i][j];
+        }
+    }
+    KRATOS_INFO("mMatrixD")                 << my_C << std::endl;
+    KRATOS_INFO("bulkWater")                << bulkWater << std::endl;
+    KRATOS_INFO("mStressVector")            << mStressVector << std::endl;
+    KRATOS_INFO("excessPorePressureCurrent")  << excessPorePressureCurrent << std::endl;
+    KRATOS_INFO("mStateVariables")          << mStateVariables << std::endl;
+    KRATOS_INFO("iPlastic")                 << iPlastic << std::endl;
+    KRATOS_INFO("nStateVariables")          << nStateVariables << std::endl;
+    KRATOS_INFO("mAttributes[IS_NON_SYMMETRIC]") << mAttributes[IS_NON_SYMMETRIC] << std::endl;
+    KRATOS_INFO("mAttributes[IS_STRESS_DEPENDENT]") << mAttributes[IS_STRESS_DEPENDENT] << std::endl;
+    KRATOS_INFO("mAttributes[IS_TIME_DEPENDENT]") << mAttributes[IS_TIME_DEPENDENT] << std::endl;
+    KRATOS_INFO("mAttributes[USE_TANGENT_MATRIX]") << mAttributes[USE_TANGENT_MATRIX] << std::endl;
+    KRATOS_INFO("mProjectDirectory")           << mProjectDirectory << std::endl;
+    KRATOS_INFO("nSizeProjectDirectory")       << nSizeProjectDirectory << std::endl;
+    KRATOS_INFO("iAbort")                      << iAbort << std::endl;
     pUserMod(pIDTask, &modelNumber, &isUndr, &iStep, &iteration, &iElement, &integrationNumber,
              &Xorigin, &Yorigin, &Zorigin, &time, &deltaTime, &(MaterialParameters.data()[0]),
              &(mStressVectorFinalized.data()[0]), &excessPorePressurePrevious,
@@ -724,6 +765,39 @@ void SmallStrainUDSM3DLaw::CallUDSM(int* pIDTask, ConstitutiveLaw::Parameters& r
              &(mStateVariables.data()[0]), &iPlastic, &nStateVariables, &mAttributes[IS_NON_SYMMETRIC],
              &mAttributes[IS_STRESS_DEPENDENT], &mAttributes[IS_TIME_DEPENDENT],
              &mAttributes[USE_TANGENT_MATRIX], mProjectDirectory.data(), &nSizeProjectDirectory, &iAbort);
+    KRATOS_INFO("Na   pUserMod") << "pIDTask = " << *pIDTask << std::endl;
+    KRATOS_INFO("modelNumber")              << modelNumber << std::endl;
+    KRATOS_INFO("isUndr")                   << isUndr << std::endl;
+    KRATOS_INFO("iStep")                    << iStep << std::endl;
+    KRATOS_INFO("Iteration")                << iteration << std::endl;
+    KRATOS_INFO("iElement")                 << iElement << std::endl;
+    KRATOS_INFO("integrationNumber")        << integrationNumber << std::endl;
+    KRATOS_INFO("position") << Xorigin << ", " << Yorigin << ", " << Zorigin << std::endl;
+    KRATOS_INFO("t, dt")    << time << ", " << deltaTime << std::endl;
+    KRATOS_INFO("MaterialParameters")       << MaterialParameters << std::endl;
+    KRATOS_INFO("mStressVectorFinalized  ") << mStressVectorFinalized << std::endl;
+    KRATOS_INFO("excessPorePressurePrevious") << excessPorePressurePrevious << std::endl;
+    KRATOS_INFO("mStateVariablesFinalized")    << mStateVariablesFinalized << std::endl;
+    KRATOS_INFO("mDeltaStrainVector")       << mDeltaStrainVector << std::endl;
+    for (auto i = 0; i < VOIGT_SIZE_3D; ++i) {
+        for (auto j = 0; j < VOIGT_SIZE_3D; ++j) {
+            my_C(i,j) = mMatrixD[i][j];
+        }
+    }
+    KRATOS_INFO("mMatrixD")                 << my_C << std::endl;
+    KRATOS_INFO("bulkWater")                << bulkWater << std::endl;
+    KRATOS_INFO("mStressVector")            << mStressVector << std::endl;
+    KRATOS_INFO("excessPorePressureCurrent")  << excessPorePressureCurrent << std::endl;
+    KRATOS_INFO("mStateVariables")          << mStateVariables << std::endl;
+    KRATOS_INFO("iPlastic")                 << iPlastic << std::endl;
+    KRATOS_INFO("nStateVariables")          << nStateVariables << std::endl;
+    KRATOS_INFO("mAttributes[IS_NON_SYMMETRIC]") << mAttributes[IS_NON_SYMMETRIC] << std::endl;
+    KRATOS_INFO("mAttributes[IS_STRESS_DEPENDENT]") << mAttributes[IS_STRESS_DEPENDENT] << std::endl;
+    KRATOS_INFO("mAttributes[IS_TIME_DEPENDENT]") << mAttributes[IS_TIME_DEPENDENT] << std::endl;
+    KRATOS_INFO("mAttributes[USE_TANGENT_MATRIX]") << mAttributes[USE_TANGENT_MATRIX] << std::endl;
+    KRATOS_INFO("mProjectDirectory")           << mProjectDirectory << std::endl;
+    KRATOS_INFO("nSizeProjectDirectory")       << nSizeProjectDirectory << std::endl;
+    KRATOS_INFO("iAbort")                      << iAbort << std::endl;
 
     if (iAbort != 0) {
         KRATOS_INFO("CallUDSM, iAbort !=0")

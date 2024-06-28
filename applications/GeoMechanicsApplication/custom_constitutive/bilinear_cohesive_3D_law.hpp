@@ -60,6 +60,12 @@ public:
     using ConstitutiveLaw::SetValue;
     void SetValue(const Variable<double>& rVariable, const double& rValue, const ProcessInfo& rCurrentProcessInfo) override;
 
+    bool RequiresInitializeMaterialResponse() override {
+        KRATOS_INFO("BilinearCohesive3DLaw::InitializeMaterialResponsePK2") << std::endl;
+        return false; }
+
+    std::string Info() const override {return "BilinearCohesive3DLaw";}
+
 protected:
     // Member Variables
     double mStateVariable;

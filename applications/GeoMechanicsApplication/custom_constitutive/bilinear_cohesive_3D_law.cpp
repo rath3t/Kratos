@@ -81,6 +81,7 @@ void BilinearCohesive3DLaw::InitializeMaterial(const Properties&   rMaterialProp
                                                const GeometryType& rElementGeometry,
                                                const Vector&       rShapeFunctionsValues)
 {
+    KRATOS_INFO("BilinearCohesive3DLaw::InitializeMaterial") << "Daar zijn we weer" << std::endl;
     mStateVariable = rMaterialProperties[DAMAGE_THRESHOLD];
 }
 

@@ -122,6 +122,7 @@ public:
      */
     using GeoLinearElasticPlaneStrain2DLaw::GetValue;
     bool& GetValue(const Variable<bool>& rThisVariable, bool& rValue) override;
+    std::string Info() const override {return "LinearElastic2DInterfaceLaw";}
 
     ///@}
 

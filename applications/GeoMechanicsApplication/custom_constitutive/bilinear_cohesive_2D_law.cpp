@@ -41,6 +41,7 @@ void BilinearCohesive2DLaw::GetLawFeatures(Features& rFeatures)
 
 ConstitutiveLaw::Pointer BilinearCohesive2DLaw::Clone() const
 {
+    KRATOS_INFO("BilinearCohesive2DLaw::Clone") << "this: " << this->Info() << std::endl;
     return Kratos::make_shared<BilinearCohesive2DLaw>(*this);
 }
 

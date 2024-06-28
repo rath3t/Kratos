@@ -23,6 +23,7 @@ namespace Kratos
 
 ConstitutiveLaw::Pointer LinearElastic2DInterfaceLaw::Clone() const
 {
+    KRATOS_INFO("LinearElastic2DInterfaceLaw::Clone") << "this: " << this->Info() << std::endl;
     return Kratos::make_shared<LinearElastic2DInterfaceLaw>(*this);
 }
 

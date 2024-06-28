@@ -37,6 +37,12 @@ public:
     SizeType GetStrainSize() const override { return 2; }
 
     SizeType WorkingSpaceDimension() override { return 2; }
+    bool RequiresInitializeMaterialResponse() override {
+        KRATOS_INFO("BilinearCohesive2DLaw::InitializeMaterialResponsePK2") << std::endl;
+        return false; }
+
+    std::string Info() const override {return "BilinearCohesive2DLaw";}
+
 
 protected:
     void ComputeEquivalentStrain(double&       rEquivalentStrain,
