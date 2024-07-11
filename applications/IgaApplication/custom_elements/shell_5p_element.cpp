@@ -9,7 +9,10 @@
 //
 //  Main authors:    Alexander Müller
 //                   Tobias Teschemacher
-//
+// The implementation is based on
+// Müller, Alexander & Bischoff, Manfred. (2022). 
+// A Consistent Finite Element Formulation of the Geometrically Non-linear Reissner-Mindlin Shell Model. 
+// Archives of Computational Methods in Engineering. http://dx.doi.org/10.1007/s11831-021-09702-7. 
 
 // System includes
 // External includes
